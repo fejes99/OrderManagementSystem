@@ -1,0 +1,8 @@
+include ':microservices:product-service'
+include ':microservices:inventory-service'
+include ':microservices:order-service'
+include ':microservices:shipping-service'
+include ':microservices:order-composite-service'
+include 'api'
+include 'util'
+
