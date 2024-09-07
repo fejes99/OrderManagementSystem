@@ -1,6 +1,9 @@
 package se.david.api.core.inventory.service;
 
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import se.david.api.core.inventory.dto.InventoryDto;
 
 import java.util.List;

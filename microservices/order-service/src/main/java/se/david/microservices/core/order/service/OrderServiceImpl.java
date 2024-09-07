@@ -3,9 +3,12 @@ package se.david.microservices.core.order.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 import se.david.api.core.order.dto.OrderDto;
+import se.david.api.core.order.dto.OrderItemDto;
 import se.david.api.core.order.service.OrderService;
 import se.david.util.http.ServiceUtil;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -29,7 +32,12 @@ public class OrderServiceImpl implements OrderService {
 
   @Override
   public OrderDto getOrder(int orderId) {
-    return null;
+    List<OrderItemDto> orderItems = new ArrayList<>();
+
+    for (int i = 1; i <= 5; i++) {
+      orderItems.add(new OrderItemDto(i, orderId, i * 10, i * 2, i * 50));
+    }
+    return new OrderDto(1, 1, 100, "Created", new Date(), orderItems, serviceUtil.getServiceAddress());
   }
 
   @Override

@@ -24,7 +24,7 @@ public class ShippingServiceImpl implements ShippingService {
 
   @Override
   public ShippingDto getShipping(int orderId) {
-    return null;
+    return new ShippingDto(1, "Nikole Tesle", "Preparing", serviceUtil.getServiceAddress());
   }
 
   @Override

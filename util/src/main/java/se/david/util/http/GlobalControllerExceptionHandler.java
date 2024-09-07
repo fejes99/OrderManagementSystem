@@ -13,7 +13,6 @@ import se.david.api.exceptions.InvalidInputException;
 import se.david.api.exceptions.NotFoundException;
 
 import static org.springframework.http.HttpStatus.*;
-import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
 @RestControllerAdvice
 public class GlobalControllerExceptionHandler {

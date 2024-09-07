@@ -1,0 +1,30 @@
+version: "2.1"
+
+services:
+  product:
+    build: microservices/product-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+  inventory:
+    build: microservices/inventory-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+  order:
+    build: microservices/order-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+  shipping:
+    build: microservices/shipping-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+  order-composite:
+    build: microservices/order-composite-service
+    mem_limit: 512m
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker

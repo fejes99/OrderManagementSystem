@@ -8,8 +8,8 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan("se.david")
 public class OrderServiceApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(OrderServiceApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(OrderServiceApplication.class, args);
+  }
 
 }

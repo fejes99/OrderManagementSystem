@@ -12,6 +12,11 @@ public interface ProductService {
   List<ProductDto> getProducts();
 
   @GetMapping(
+    value = "/products/byIds",
+    produces = "application/json")
+  List<ProductDto> getProductsByIds(@RequestParam List<Integer> ids);
+
+  @GetMapping(
     value = "/products/{productId}",
     produces = "application/json")
   ProductDto getProduct(@PathVariable int productId);

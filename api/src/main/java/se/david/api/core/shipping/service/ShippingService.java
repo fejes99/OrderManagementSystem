@@ -12,7 +12,7 @@ public interface ShippingService {
   List<ShippingDto> getShipments();
 
   @GetMapping(
-    value = "/shipments/{shippingId}",
+    value = "/shipments/{orderId}",
     produces = "application/json")
   ShippingDto getShipping(@PathVariable int orderId);
 

@@ -24,7 +24,7 @@ public class InventoryServiceImpl implements InventoryService {
 
   @Override
   public InventoryDto getInventoryStock(int productId) {
-    return new InventoryDto(1, 10);
+    return new InventoryDto(1, 10, serviceUtil.getServiceAddress());
   }
 
   @Override

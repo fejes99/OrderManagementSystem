@@ -1,19 +1,18 @@
 package se.david.api.core.inventory.dto;
 
-public class InventoryDto {
-  private final int productId;
-  private Integer quantity = 0;
-
-  public InventoryDto(int productId, Integer quantity) {
-    this.productId = productId;
-    this.quantity = quantity;
+public record InventoryDto(int productId, Integer quantity, String serviceAddress) {
+  public InventoryDto {
+    if(quantity == null) {
+      quantity = 0;
+    }
   }
 
-  public int getProductId() {
-    return productId;
-  }
-
-  public Integer getQuantity() {
-    return quantity;
+  @Override
+  public String toString() {
+    return "InventoryDto{" +
+      "productId=" + productId +
+      ", quantity=" + quantity +
+      ", serviceAddress='" + serviceAddress + '\'' +
+      '}';
   }
 }

@@ -4,7 +4,8 @@ import org.springframework.http.HttpStatus;
 
 import java.time.ZonedDateTime;
 
-public class HttpErrorInfo {private final ZonedDateTime timestamp;
+public class HttpErrorInfo {
+  private final ZonedDateTime timestamp;
   private final String path;
   private final HttpStatus httpStatus;
   private final String message;
