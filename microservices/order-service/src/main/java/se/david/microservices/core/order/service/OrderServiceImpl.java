@@ -35,7 +35,7 @@ public class OrderServiceImpl implements OrderService {
   public OrderDto getOrder(int orderId) {
     List<OrderItemDto> orderItems = new ArrayList<>();
 
-    for (int i = 1; i <= 5; i++) {
+    for(int i = 1; i <= 5; i++) {
       orderItems.add(new OrderItemDto(i, orderId, i * 10, i * 2, i * 50));
     }
     return new OrderDto(1, 1, 100, "Created", new Date(), orderItems, serviceUtil.getServiceAddress());

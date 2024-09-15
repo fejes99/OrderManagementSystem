@@ -17,7 +17,8 @@ public class Inventory {
   private int productId;
   private int quantity;
 
-  public Inventory() {}
+  public Inventory() {
+  }
 
   public Inventory(int productId, int quantity) {
     this.productId = productId;

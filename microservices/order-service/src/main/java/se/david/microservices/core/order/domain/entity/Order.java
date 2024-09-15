@@ -31,7 +31,8 @@ public class Order {
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<OrderItem> orderItems;
 
-  public Order() {}
+  public Order() {
+  }
 
   public Order(int id, int userId, int totalPrice, String status, Date createdAt, List<OrderItem> orderItems) {
     this.id = id;

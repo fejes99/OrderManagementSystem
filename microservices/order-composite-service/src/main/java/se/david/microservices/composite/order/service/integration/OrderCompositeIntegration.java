@@ -1,6 +1,8 @@
 package se.david.microservices.composite.order.service.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class OrderCompositeIntegration implements ProductService, InventoryService, OrderService, ShippingService {
+  private static final Logger LOG = LoggerFactory.getLogger(OrderCompositeIntegration.class);
+
   private final RestTemplate restTemplate;
   private final ObjectMapper mapper;
 
@@ -32,21 +36,6 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   private final String inventoryServiceUrl;
   private final String orderServiceUrl;
   private final String shippingServiceUrl;
-
-  @Override
-  public InventoryDto updateInventoryStock(int productId, InventoryDto inventory) {
-    return null;
-  }
-
-  @Override
-  public boolean checkStock(List<InventoryCheckRequestDto> inventoryCheckRequests) {
-    return false;
-  }
-
-  @Override
-  public void reduceStock(List<InventoryReduceRequestDto> inventoryReduceRequests) {
-
-  }
 
   @Autowired
   public OrderCompositeIntegration(
@@ -79,18 +68,23 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public List<InventoryDto> getInventoryStocks() {
-    return List.of();
+    return restTemplate.exchange(inventoryServiceUrl, HttpMethod.GET, null,
+      new ParameterizedTypeReference<List<InventoryDto>>() {
+      }).getBody();
   }
 
   @Override
   public List<OrderDto> getOrders() {
-    return List.of();
+    return restTemplate.exchange(orderServiceUrl, HttpMethod.GET, null,
+      new ParameterizedTypeReference<List<OrderDto>>() {
+      }).getBody();
   }
 
   @Override
   public List<ProductDto> getProducts() {
     return restTemplate.exchange(productServiceUrl, HttpMethod.GET, null,
-      new ParameterizedTypeReference<List<ProductDto>>() {}).getBody();
+      new ParameterizedTypeReference<List<ProductDto>>() {
+      }).getBody();
   }
 
   @Override
@@ -103,18 +97,30 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
     String url = productServiceUrl + "byIds?ids=" + idsParam;
 
     return restTemplate.exchange(url, HttpMethod.GET, null,
-      new ParameterizedTypeReference<List<ProductDto>>() {}).getBody();
+      new ParameterizedTypeReference<List<ProductDto>>() {
+      }).getBody();
   }
 
 
   @Override
   public List<ShippingDto> getShipments() {
-    return List.of();
+    return restTemplate.exchange(shippingServiceUrl, HttpMethod.GET, null,
+      new ParameterizedTypeReference<List<ShippingDto>>() {
+      }).getBody();
   }
 
   @Override
   public List<ShippingDto> getShipmentsByIds(List<Integer> ids) {
-    return List.of();
+    String idsParam = ids.stream()
+      .map(String::valueOf)
+      .collect(Collectors.joining(","));
+
+    // Add the ids as a query parameter in the URL
+    String url = shippingServiceUrl + "byIds?ids=" + idsParam;
+
+    return restTemplate.exchange(url, HttpMethod.GET, null,
+      new ParameterizedTypeReference<List<ShippingDto>>() {
+      }).getBody();
   }
 
   @Override
@@ -125,17 +131,32 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public ShippingDto createShippingOrder(ShippingCreateDto shipping) {
-    return null;
+    String url = shippingServiceUrl;
+    LOG.debug("Will post a new shipping to URL: {}", url);
+
+    ShippingDto shippingDto = restTemplate.postForObject(url, shipping, ShippingDto.class);
+    assert shippingDto != null;
+    LOG.debug("Created a shipping with orderId: {}", shippingDto.orderId());
+
+    return shippingDto;
   }
 
   @Override
   public ShippingDto updateShippingStatus(int orderId, String status) {
-    return null;
+    String url = shippingServiceUrl + "/" + orderId + "/status";
+    LOG.debug("Will update the shipping status for orderId: {} to status: {}", orderId, status);
+
+    ShippingDto updatedShipping = restTemplate.patchForObject(url, status, ShippingDto.class);
+    return updatedShipping;
   }
+
 
   @Override
   public void deleteShipping(int shippingId) {
+    String url = shippingServiceUrl + "/" + shippingId;
+    LOG.debug("Will call the deleteShipping API on URL: {}", url);
 
+    restTemplate.delete(url);
   }
 
   @Override
@@ -146,17 +167,32 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public ProductDto createProduct(ProductDto product) {
-    return null;
+    String url = productServiceUrl;
+    LOG.debug("Will post a new product to URL: {}", url);
+
+    ProductDto productDto = restTemplate.postForObject(url, product, ProductDto.class);
+    assert productDto != null;
+    LOG.debug("Created a product with id: {}", productDto.id());
+
+    return productDto;
   }
 
   @Override
   public ProductDto updateProduct(int productId, ProductDto product) {
-    return null;
+    String url = productServiceUrl + productId;
+    LOG.debug("Will update the product with id: {}", productId);
+
+    restTemplate.put(url, product);
+    return getProduct(productId);
   }
+
 
   @Override
   public void deleteProduct(int productId) {
+    String url = productServiceUrl + "/" + productId;
+    LOG.debug("Will call the deleteProduct API on URL: {}", url);
 
+    restTemplate.delete(url);
   }
 
   @Override
@@ -172,21 +208,63 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public OrderDto createOrder(OrderCreateDto order) {
-    return null;
+    String url = orderServiceUrl;
+    LOG.debug("Will post a new order to URL: {}", url);
+
+    OrderDto orderDto = restTemplate.postForObject(url, order, OrderDto.class);
+    assert orderDto != null;
+    LOG.debug("Created a order with id: {}", orderDto.id());
+
+    return orderDto;
   }
 
   @Override
   public OrderDto updateOrder(int orderId, OrderDto order) {
-    return null;
+    String url = orderServiceUrl + orderId;
+    LOG.debug("Will update the order with id: {}", orderId);
+
+    restTemplate.put(url, order);
+    return getOrder(orderId);
   }
+
 
   @Override
   public void deleteOrder(int orderId) {
+    String url = orderServiceUrl + "/" + orderId;
+    LOG.debug("Will call the deleteOrder API on URL: {}", url);
 
+    restTemplate.delete(url);
   }
 
   @Override
   public InventoryDto getInventoryStock(int productId) {
-    return null;
+    String url = inventoryServiceUrl + productId;
+    return restTemplate.getForObject(url, InventoryDto.class);
+  }
+
+  @Override
+  public InventoryDto updateInventoryStock(int productId, InventoryDto inventory) {
+    String url = inventoryServiceUrl + productId;
+    LOG.debug("Will update the inventory for product id: {}", productId);
+
+    restTemplate.put(url, inventory);
+    return getInventoryStock(productId);
+  }
+
+  @Override
+  public boolean checkStock(List<InventoryCheckRequestDto> inventoryCheckRequests) {
+    String url = inventoryServiceUrl + "checkStock";
+    LOG.debug("Will check stock for the requested inventories");
+
+    Boolean response = restTemplate.postForObject(url, inventoryCheckRequests, Boolean.class);
+    return response != null && response;
+  }
+
+  @Override
+  public void reduceStock(List<InventoryReduceRequestDto> inventoryReduceRequests) {
+    String url = inventoryServiceUrl + "reduceStock";
+    LOG.debug("Will reduce stock for the requested inventories");
+
+    restTemplate.postForObject(url, inventoryReduceRequests, Void.class);
   }
 }

@@ -18,7 +18,8 @@ public class Shipping {
   private String shippingAddress;
   private String status;
 
-  public Shipping() {}
+  public Shipping() {
+  }
 
   public Shipping(int orderId, String shippingAddress, String status) {
     this.orderId = orderId;

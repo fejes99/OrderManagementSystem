@@ -6,7 +6,6 @@ import se.david.api.core.product.dto.ProductDto;
 import se.david.api.core.product.service.ProductService;
 import se.david.util.http.ServiceUtil;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +27,7 @@ public class ProductServiceImpl implements ProductService {
   public List<ProductDto> getProductsByIds(List<Integer> ids) {
     List<ProductDto> products = new ArrayList<>();
 
-    for (Integer id : ids) {
+    for(Integer id : ids) {
       products.add(new ProductDto(id, "Product " + id, "Description of Product " + id,
         100, serviceUtil.getServiceAddress()));
     }

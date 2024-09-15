@@ -21,7 +21,8 @@ public class Product {
   @Column(nullable = false)
   private int price;
 
-  public Product() {}
+  public Product() {
+  }
 
   public Product(int id, String name, String description, int price) {
     this.id = id;

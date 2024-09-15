@@ -77,7 +77,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
 
   private Map<Integer, ProductDto> getProductMapFromOrders(List<OrderDto> orders) {
     List<OrderItemDto> orderItems = collectAllOrderItems(orders);
-    List<Integer> productIds = extractUniqueProductIds(orderItems, OrderItemDto::productId);
+    List<Integer> productIds = extractProductIds(orderItems, OrderItemDto::productId);
     LOG.debug("getProductMapFromOrders: Retrieving products for {} unique product IDs.", productIds.size());
 
     List<ProductDto> products = integration.getProductsByIds(productIds);
@@ -87,7 +87,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
       .collect(Collectors.toMap(ProductDto::id, product -> product));
   }
 
-  private <T> List<Integer> extractUniqueProductIds(List<T> orderItems, Function<T, Integer> productIdMapper) {
+  private <T> List<Integer> extractProductIds(List<T> orderItems, Function<T, Integer> productIdMapper) {
     return orderItems.stream()
       .map(productIdMapper)
       .distinct()
@@ -108,7 +108,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     List<OrderDto> orders = integration.getOrdersByUser(userId);
     LOG.debug("getCompositeOrdersByUser: Retrieved {} orders for userId {}.", orders.size(), userId);
 
-    if (orders.isEmpty()) {
+    if(orders.isEmpty()) {
       LOG.info("getCompositeOrdersByUser: No orders found for userId {}.", userId);
       return Collections.emptyList();
     }
@@ -135,21 +135,21 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     LOG.debug("getCompositeOrder: Starting to retrieve order for orderId {}.", orderId);
 
     OrderDto order = integration.getOrder(orderId);
-    if (order == null) {
+    if(order == null) {
       LOG.warn("getCompositeOrder: No order found for orderId {}.", orderId);
       return null; // todo: implement bad request exception
     }
     LOG.debug("getCompositeOrder: Successfully retrieved order with orderId {}.", orderId);
 
     ShippingDto shipping = integration.getShipping(orderId);
-    if (shipping == null) {
+    if(shipping == null) {
       LOG.warn("getCompositeOrder: No shipping details found for orderId {}.", orderId);
       return null;
     }
     LOG.debug("getCompositeOrder: Successfully retrieved shipping details for orderId {}.", orderId);
 
     List<OrderItemDto> orderItems = order.orderItems();
-    List<ProductDto> products = integration.getProductsByIds(extractUniqueProductIds(orderItems, OrderItemDto::productId));
+    List<ProductDto> products = integration.getProductsByIds(extractProductIds(orderItems, OrderItemDto::productId));
     LOG.debug("getCompositeOrder: Extracted {} unique products from order items for orderId {}.", products.size(), orderId);
 
     OrderAggregateDto orderAggregate = createOrderAggregateDto(order, shipping, products, orderItems, serviceUtil.getServiceAddress());
@@ -163,44 +163,59 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
   public OrderAggregateDto createCompositeOrder(OrderAggregateCreateDto orderAggregateCreateDto) throws Exception {
     LOG.debug("createCompositeOrder: Starting to creating order");
 
-    List<OrderItemCreateDto> orderItemCreateDtos = orderAggregateCreateDto.orderItemCreateDtos();
-    List<Integer> productIds = extractUniqueProductIds(orderItemCreateDtos, OrderItemCreateDto::productId);
-
+    List<OrderItemCreateDto> orderItems = orderAggregateCreateDto.orderItemCreateDtos();
+    List<Integer> productIds = extractProductIds(orderItems, OrderItemCreateDto::productId);
     List<ProductDto> products = integration.getProductsByIds(productIds);
+    LOG.debug("createCompositeOrder: Retrieved products: {}", productIds);
 
-    List<InventoryCheckRequestDto> inventoryCheckRequests = orderItemCreateDtos
+    checkAndReduceInventory(orderItems);
+    LOG.debug("createCompositeOrder: Inventory check and reduction successful");
+
+    OrderDto createdOrder = createOrder(orderAggregateCreateDto.userId(), orderItems);
+    ShippingDto createdShipping = createShippingOrder(orderAggregateCreateDto.shippingAddress());
+    LOG.debug("createCompositeOrder: Order and shipping created - orderId: {}, shippingId: {}", createdOrder.id(), createdShipping.orderId());
+
+    OrderAggregateDto orderAggregate = createOrderAggregateDto(
+      createdOrder, createdShipping, products, createdOrder.orderItems(), serviceUtil.getServiceAddress());
+    LOG.debug("createCompositeOrder: OrderAggregateDto created for orderId: {}", createdOrder.id());
+
+    return orderAggregate;
+  }
+
+  private void checkAndReduceInventory(List<OrderItemCreateDto> orderItems) throws Exception {
+    if(!checkInventory(orderItems)) {
+      throw new Exception("One or more items are out of stock.");
+    }
+    reduceInventory(orderItems);
+  }
+
+
+  private boolean checkInventory(List<OrderItemCreateDto> orderItems) {
+    List<InventoryCheckRequestDto> inventoryCheckRequests = orderItems
       .stream()
       .map(oi -> new InventoryCheckRequestDto(oi.productId(), oi.quantity()))
       .collect(Collectors.toList());
 
-    boolean isStockAvailable = integration.checkStock(inventoryCheckRequests);
-    if (!isStockAvailable) {
-      throw new Exception("One or more items are out of stock.");
-    }
+    return integration.checkStock(inventoryCheckRequests);
+  }
 
-    List<InventoryReduceRequestDto> inventoryReduceRequests = inventoryCheckRequests
+  private void reduceInventory(List<OrderItemCreateDto> orderItems) {
+    List<InventoryReduceRequestDto> inventoryReduceRequests = orderItems
       .stream()
       .map(oi -> new InventoryReduceRequestDto(oi.productId(), oi.quantity()))
       .collect(Collectors.toList());
 
     integration.reduceStock(inventoryReduceRequests);
+  }
 
-    OrderCreateDto orderCreateDto = new OrderCreateDto(
-      orderAggregateCreateDto.userId(),
-      orderAggregateCreateDto.orderItemCreateDtos()
-    );
+  private OrderDto createOrder(int userId, List<OrderItemCreateDto> orderItems) {
+    OrderCreateDto orderCreateDto = new OrderCreateDto(userId, orderItems);
+    return integration.createOrder(orderCreateDto);
+  }
 
-    OrderDto createdOrder = integration.createOrder(orderCreateDto);
-
-    ShippingCreateDto shippingCreateDto = new ShippingCreateDto(orderAggregateCreateDto.shippingAddress());
-    ShippingDto createdShipping = integration.createShippingOrder(shippingCreateDto);
-
-    OrderAggregateDto createdOrderAggregate = createOrderAggregateDto(
-     createdOrder, createdShipping, products, createdOrder.orderItems(), serviceUtil.getServiceAddress()
-    );
-    LOG.debug("createCompositeOrder: Created OrderAggregateDto for orderId {}.", createdOrder.id());
-
-    return createdOrderAggregate;
+  private ShippingDto createShippingOrder(String shippingAddress) {
+    ShippingCreateDto shippingCreateDto = new ShippingCreateDto(shippingAddress);
+    return integration.createShippingOrder(shippingCreateDto);
   }
 
   private OrderAggregateDto createOrderAggregateDto(
