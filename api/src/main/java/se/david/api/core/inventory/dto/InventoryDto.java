@@ -5,6 +5,9 @@ public record InventoryDto(int productId, Integer quantity, String serviceAddres
     if(quantity == null) {
       quantity = 0;
     }
+    if(serviceAddress == null) {
+      serviceAddress = "";
+    }
   }
 
   @Override

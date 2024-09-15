@@ -9,9 +9,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import se.david.api.core.inventory.dto.InventoryCheckRequestDto;
 import se.david.api.core.inventory.dto.InventoryDto;
-import se.david.api.core.inventory.dto.InventoryReduceRequestDto;
+import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
 import se.david.api.core.inventory.service.InventoryService;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
@@ -146,14 +145,13 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
     String url = shippingServiceUrl + "/" + orderId + "/status";
     LOG.debug("Will update the shipping status for orderId: {} to status: {}", orderId, status);
 
-    ShippingDto updatedShipping = restTemplate.patchForObject(url, status, ShippingDto.class);
-    return updatedShipping;
+    return restTemplate.patchForObject(url, status, ShippingDto.class);
   }
 
 
   @Override
   public void deleteShipping(int shippingId) {
-    String url = shippingServiceUrl + "/" + shippingId;
+    String url = shippingServiceUrl + shippingId;
     LOG.debug("Will call the deleteShipping API on URL: {}", url);
 
     restTemplate.delete(url);
@@ -189,7 +187,7 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public void deleteProduct(int productId) {
-    String url = productServiceUrl + "/" + productId;
+    String url = productServiceUrl + productId;
     LOG.debug("Will call the deleteProduct API on URL: {}", url);
 
     restTemplate.delete(url);
@@ -230,7 +228,7 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public void deleteOrder(int orderId) {
-    String url = orderServiceUrl + "/" + orderId;
+    String url = orderServiceUrl + orderId;
     LOG.debug("Will call the deleteOrder API on URL: {}", url);
 
     restTemplate.delete(url);
@@ -243,28 +241,38 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public InventoryDto updateInventoryStock(int productId, InventoryDto inventory) {
+  public InventoryDto createInventoryStock(InventoryDto inventoryCreateRequest) {
+    String url = inventoryServiceUrl;
+    LOG.debug("Will post a new inventory stock to URL: {}", url);
+
+    InventoryDto inventoryDto = restTemplate.postForObject(url, inventoryCreateRequest, InventoryDto.class);
+    assert inventoryDto != null;
+    LOG.debug("Created a inventory with productOd: {}", inventoryDto.productId());
+
+    return inventoryDto;
+  }
+
+  @Override
+  public void deleteInventoryStock(int productId) {
     String url = inventoryServiceUrl + productId;
-    LOG.debug("Will update the inventory for product id: {}", productId);
+    LOG.debug("Will call the deleteInventoryStock API on URL: {}", url);
 
-    restTemplate.put(url, inventory);
-    return getInventoryStock(productId);
+    restTemplate.delete(url);
   }
 
   @Override
-  public boolean checkStock(List<InventoryCheckRequestDto> inventoryCheckRequests) {
-    String url = inventoryServiceUrl + "checkStock";
-    LOG.debug("Will check stock for the requested inventories");
+  public InventoryDto increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseRequest) {
+    String url = inventoryServiceUrl + "increaseStock";
+    LOG.debug("Will increase stock for the requested product");
 
-    Boolean response = restTemplate.postForObject(url, inventoryCheckRequests, Boolean.class);
-    return response != null && response;
+    return restTemplate.patchForObject(url, inventoryIncreaseRequest, InventoryDto.class);
   }
 
   @Override
-  public void reduceStock(List<InventoryReduceRequestDto> inventoryReduceRequests) {
+  public void reduceStock(List<InventoryStockAdjustmentRequestDto> inventoryReduceRequests) {
     String url = inventoryServiceUrl + "reduceStock";
-    LOG.debug("Will reduce stock for the requested inventories");
+    LOG.debug("Will reduce stock for the requested products");
 
-    restTemplate.postForObject(url, inventoryReduceRequests, Void.class);
+    restTemplate.put(url, inventoryReduceRequests, Void.class);
   }
 }

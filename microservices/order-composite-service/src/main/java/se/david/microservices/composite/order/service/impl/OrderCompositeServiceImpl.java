@@ -6,8 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 import se.david.api.composite.order.dto.*;
 import se.david.api.composite.order.service.OrderCompositeService;
-import se.david.api.core.inventory.dto.InventoryCheckRequestDto;
-import se.david.api.core.inventory.dto.InventoryReduceRequestDto;
+import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 import se.david.api.core.order.dto.OrderItemDto;
@@ -168,7 +167,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     List<ProductDto> products = integration.getProductsByIds(productIds);
     LOG.debug("createCompositeOrder: Retrieved products: {}", productIds);
 
-    checkAndReduceInventory(orderItems);
+    reduceInventory(orderItems);
     LOG.debug("createCompositeOrder: Inventory check and reduction successful");
 
     OrderDto createdOrder = createOrder(orderAggregateCreateDto.userId(), orderItems);
@@ -182,27 +181,10 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     return orderAggregate;
   }
 
-  private void checkAndReduceInventory(List<OrderItemCreateDto> orderItems) throws Exception {
-    if(!checkInventory(orderItems)) {
-      throw new Exception("One or more items are out of stock.");
-    }
-    reduceInventory(orderItems);
-  }
-
-
-  private boolean checkInventory(List<OrderItemCreateDto> orderItems) {
-    List<InventoryCheckRequestDto> inventoryCheckRequests = orderItems
-      .stream()
-      .map(oi -> new InventoryCheckRequestDto(oi.productId(), oi.quantity()))
-      .collect(Collectors.toList());
-
-    return integration.checkStock(inventoryCheckRequests);
-  }
-
   private void reduceInventory(List<OrderItemCreateDto> orderItems) {
-    List<InventoryReduceRequestDto> inventoryReduceRequests = orderItems
+    List<InventoryStockAdjustmentRequestDto> inventoryReduceRequests = orderItems
       .stream()
-      .map(oi -> new InventoryReduceRequestDto(oi.productId(), oi.quantity()))
+      .map(oi -> new InventoryStockAdjustmentRequestDto(oi.productId(), oi.quantity()))
       .collect(Collectors.toList());
 
     integration.reduceStock(inventoryReduceRequests);
