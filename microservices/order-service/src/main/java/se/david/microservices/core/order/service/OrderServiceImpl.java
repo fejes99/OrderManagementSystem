@@ -2,6 +2,7 @@ package se.david.microservices.core.order.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 import se.david.api.core.order.dto.OrderItemDto;
 import se.david.api.core.order.service.OrderService;
@@ -41,7 +42,7 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public OrderDto createOrder(OrderDto order) {
+  public OrderDto createOrder(OrderCreateDto order) {
     return null;
   }
 

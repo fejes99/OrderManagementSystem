@@ -1,6 +1,7 @@
 package se.david.api.core.order.service;
 
 import org.springframework.web.bind.annotation.*;
+import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 
 import java.util.List;
@@ -25,7 +26,7 @@ public interface OrderService {
     value = "/orders",
     consumes = "application/json",
     produces = "application/json")
-  OrderDto createOrder(@RequestBody OrderDto order);
+  OrderDto createOrder(@RequestBody OrderCreateDto order);
 
   @PutMapping(
     value = "/orders/{orderId}",

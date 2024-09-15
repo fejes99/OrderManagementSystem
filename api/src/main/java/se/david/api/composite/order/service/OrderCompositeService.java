@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import se.david.api.composite.order.dto.OrderAggregateCreateDto;
 import se.david.api.composite.order.dto.OrderAggregateDto;
 
 import java.util.List;
@@ -106,5 +107,5 @@ public interface OrderCompositeService {
       )
     }
   )
-  OrderAggregateDto createCompositeOrder(@RequestBody OrderAggregateDto orderAggregateDto);
+  OrderAggregateDto createCompositeOrder(@RequestBody OrderAggregateCreateDto orderAggregateCreateDto) throws Exception;
 }

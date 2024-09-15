@@ -7,17 +7,19 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import se.david.api.core.inventory.dto.InventoryCheckRequestDto;
 import se.david.api.core.inventory.dto.InventoryDto;
+import se.david.api.core.inventory.dto.InventoryReduceRequestDto;
 import se.david.api.core.inventory.service.InventoryService;
+import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 import se.david.api.core.order.service.OrderService;
 import se.david.api.core.product.dto.ProductDto;
 import se.david.api.core.product.service.ProductService;
+import se.david.api.core.shipping.dto.ShippingCreateDto;
 import se.david.api.core.shipping.dto.ShippingDto;
 import se.david.api.core.shipping.service.ShippingService;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +36,16 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   @Override
   public InventoryDto updateInventoryStock(int productId, InventoryDto inventory) {
     return null;
+  }
+
+  @Override
+  public boolean checkStock(List<InventoryCheckRequestDto> inventoryCheckRequests) {
+    return false;
+  }
+
+  @Override
+  public void reduceStock(List<InventoryReduceRequestDto> inventoryReduceRequests) {
+
   }
 
   @Autowired
@@ -101,13 +113,18 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
+  public List<ShippingDto> getShipmentsByIds(List<Integer> ids) {
+    return List.of();
+  }
+
+  @Override
   public ShippingDto getShipping(int orderId) {
     String url = shippingServiceUrl + orderId;
     return restTemplate.getForObject(url, ShippingDto.class);
   }
 
   @Override
-  public ShippingDto createShippingOrder(ShippingDto shipping) {
+  public ShippingDto createShippingOrder(ShippingCreateDto shipping) {
     return null;
   }
 
@@ -154,7 +171,7 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public OrderDto createOrder(OrderDto order) {
+  public OrderDto createOrder(OrderCreateDto order) {
     return null;
   }
 

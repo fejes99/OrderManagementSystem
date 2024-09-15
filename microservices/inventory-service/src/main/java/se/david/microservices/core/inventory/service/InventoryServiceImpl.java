@@ -2,7 +2,9 @@ package se.david.microservices.core.inventory.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import se.david.api.core.inventory.dto.InventoryCheckRequestDto;
 import se.david.api.core.inventory.dto.InventoryDto;
+import se.david.api.core.inventory.dto.InventoryReduceRequestDto;
 import se.david.api.core.inventory.service.InventoryService;
 import se.david.util.http.ServiceUtil;
 
@@ -30,5 +32,15 @@ public class InventoryServiceImpl implements InventoryService {
   @Override
   public InventoryDto updateInventoryStock(int productId, InventoryDto inventory) {
     return null;
+  }
+
+  @Override
+  public boolean checkStock(List<InventoryCheckRequestDto> inventoryCheckRequests) {
+    return false;
+  }
+
+  @Override
+  public void reduceStock(List<InventoryReduceRequestDto> inventoryReduceRequests) {
+
   }
 }

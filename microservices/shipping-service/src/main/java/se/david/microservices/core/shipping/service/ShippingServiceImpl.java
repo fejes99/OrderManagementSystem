@@ -2,6 +2,7 @@ package se.david.microservices.core.shipping.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import se.david.api.core.shipping.dto.ShippingCreateDto;
 import se.david.api.core.shipping.dto.ShippingDto;
 import se.david.api.core.shipping.service.ShippingService;
 import se.david.util.http.ServiceUtil;
@@ -23,12 +24,17 @@ public class ShippingServiceImpl implements ShippingService {
   }
 
   @Override
+  public List<ShippingDto> getShipmentsByIds(List<Integer> ids) {
+    return List.of();
+  }
+
+  @Override
   public ShippingDto getShipping(int orderId) {
     return new ShippingDto(1, "Nikole Tesle", "Preparing", serviceUtil.getServiceAddress());
   }
 
   @Override
-  public ShippingDto createShippingOrder(ShippingDto shipping) {
+  public ShippingDto createShippingOrder(ShippingCreateDto shipping) {
     return null;
   }
 

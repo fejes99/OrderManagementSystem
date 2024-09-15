@@ -11,6 +11,7 @@ within the Master's program at the Faculty of Technical Sciences, University of 
 
 - **Endpoints**:
     - `GET /products`: Retrieve all products
+    - `GET /products/byIds`: Retrieve products by list of ids
     - `GET /products/{id}`: Retrieve details of a specific product
     - `POST /products`: Create a new product
     - `PUT /products/{id}`: Update an existing product
@@ -23,17 +24,17 @@ within the Master's program at the Faculty of Technical Sciences, University of 
           +UUID id
           +String name
           +String description
-          +Decimal price
+          +Integer price
       }
   ```
 
 ### 2. Inventory Service
 
 - **Endpoints**:
-    - `GET /inventory`: Retrieve inventory levels for all products
-    - `GET /inventory/{productId}`: Retrieve inventory stock for a specific product
-    - `PUT /inventory/{productId}`: Update inventory stock for a product
-- **Database**: SQL (MongoDB)
+    - `GET /inventories`: Retrieve inventory levels for all products
+    - `GET /inventories/{productId}`: Retrieve inventory stock for a specific product
+    - `PUT /inventories/{productId}`: Update inventory stock for a product
+- **Database**: NoSQL (MongoDB)
 - **Database Schema**:
   ```mermaid
   classDiagram
@@ -60,7 +61,7 @@ within the Master's program at the Faculty of Technical Sciences, University of 
       class Orders {
           +UUID id
           +UUID userId
-          +Decimal totalAmount
+          +Integer totalPrice
           +String status
           +Date createdAt
       }
@@ -70,7 +71,7 @@ within the Master's program at the Faculty of Technical Sciences, University of 
           +UUID orderId
           +UUID productId
           +Integer quantity
-          +Decimal price
+          +Integer price
       }
 
       Orders --> OrderItems : order_id
@@ -80,6 +81,7 @@ within the Master's program at the Faculty of Technical Sciences, University of 
 
 - **Endpoints**:
     - `GET /shipments`: Retrieve all shipments
+    - `GET /products/byIds`: Retrieve shipments by list of order ids
     - `GET /shipments/{id}`: Retrieve shipping details for a specific order
     - `POST /shipments`: Create a shipping order
     - `PUT /shipments/{id}`: Update shipments status
@@ -98,10 +100,10 @@ within the Master's program at the Faculty of Technical Sciences, University of 
 ### 5. Order Composite Service
 
 - **Endpoints**:
-    - `GET /orders`: Retrieve all orders with shipping and inventory details
-    - `GET /orders/{id}`: Retrieve an order along with shipping and inventory details
-    - `GET /orders/user/{userId}`: Retrieve all order for specific user
-    - `POST /orders`: Create a new order
+    - `GET /order-composite`: Retrieve all orders with shipping and order details
+    - `GET /order-composite/user/{userId}`: Retrieve all order for specific user
+    - `GET /order-composite/{id}`: Retrieve an order along with shipping and order details
+    - `POST /order-composite`: Create a new order
 - **Database**: None (Acts as an orchestrator)
 
 ## Architecture Diagrams
