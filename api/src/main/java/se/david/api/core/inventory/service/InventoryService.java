@@ -173,6 +173,4 @@ public interface InventoryService {
     }
   )
   void reduceStock(@RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceRequests);
-
-
 }
