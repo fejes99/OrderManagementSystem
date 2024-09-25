@@ -15,7 +15,9 @@ import se.david.api.core.inventory.service.InventoryService;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 import se.david.api.core.order.service.OrderService;
+import se.david.api.core.product.dto.ProductCreateDto;
 import se.david.api.core.product.dto.ProductDto;
+import se.david.api.core.product.dto.ProductUpdateDto;
 import se.david.api.core.product.service.ProductService;
 import se.david.api.core.shipping.dto.ShippingCreateDto;
 import se.david.api.core.shipping.dto.ShippingDto;
@@ -164,11 +166,11 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public ProductDto createProduct(ProductDto product) {
+  public ProductDto createProduct(ProductCreateDto productCreateDto) {
     String url = productServiceUrl;
     LOG.debug("Will post a new product to URL: {}", url);
 
-    ProductDto productDto = restTemplate.postForObject(url, product, ProductDto.class);
+    ProductDto productDto = restTemplate.postForObject(url, productCreateDto, ProductDto.class);
     assert productDto != null;
     LOG.debug("Created a product with id: {}", productDto.id());
 
@@ -176,11 +178,11 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public ProductDto updateProduct(int productId, ProductDto product) {
+  public ProductDto updateProduct(int productId, ProductUpdateDto productUpdateDto) {
     String url = productServiceUrl + productId;
     LOG.debug("Will update the product with id: {}", productId);
 
-    restTemplate.put(url, product);
+    restTemplate.put(url, productUpdateDto);
     return getProduct(productId);
   }
 

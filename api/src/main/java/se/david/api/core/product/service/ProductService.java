@@ -3,12 +3,15 @@ package se.david.api.core.product.service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
+import se.david.api.core.product.dto.ProductCreateDto;
 import se.david.api.core.product.dto.ProductDto;
+import se.david.api.core.product.dto.ProductUpdateDto;
 
 import java.util.List;
 
@@ -45,7 +48,7 @@ public interface ProductService {
         in = ParameterIn.QUERY,
         required = true,
         description = "List of product IDs to retrieve",
-        schema = @Schema(type = "array", implementation = Integer.class)
+        array = @ArraySchema(schema = @Schema(implementation = Integer.class))
       )
     },
     responses = {
@@ -110,7 +113,7 @@ public interface ProductService {
         description = "Successfully created the product",
         content = @Content(
           mediaType = "application/json",
-          schema = @Schema(implementation = ProductDto.class)
+          schema = @Schema(implementation = ProductCreateDto.class)
         )
       ),
       @ApiResponse(
@@ -123,7 +126,7 @@ public interface ProductService {
       )
     }
   )
-  ProductDto createProduct(@RequestBody ProductDto product);
+  ProductDto createProduct(@RequestBody ProductCreateDto productCreateDto);
 
   @PutMapping(
     value = "/products/{productId}",
@@ -160,7 +163,7 @@ public interface ProductService {
       )
     }
   )
-  ProductDto updateProduct(@PathVariable int productId, @RequestBody ProductDto product);
+  ProductDto updateProduct(@PathVariable int productId, @RequestBody ProductUpdateDto productUpdateDto);
 
   @DeleteMapping(
     value = "/products/{productId}")

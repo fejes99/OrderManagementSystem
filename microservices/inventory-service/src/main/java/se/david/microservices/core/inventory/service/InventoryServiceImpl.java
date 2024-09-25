@@ -35,6 +35,7 @@ public class InventoryServiceImpl implements InventoryService {
 
   @Override
   public List<InventoryDto> getInventoryStocks() {
+    LOG.info("getInventoryStocks: Fetching all inventory stocks");
     List<Inventory> inventories = (List<Inventory>) repository.findAll();
     return inventories.stream()
       .map(this::mapToInventoryDtoWithServiceAddress)
