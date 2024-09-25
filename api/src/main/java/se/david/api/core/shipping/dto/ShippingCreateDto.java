@@ -1,4 +1,4 @@
 package se.david.api.core.shipping.dto;
 
-public record ShippingCreateDto(String address) {
+public record ShippingCreateDto(Integer orderId, String shippingAddress) {
 }

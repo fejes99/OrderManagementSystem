@@ -61,7 +61,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     Set<Integer> orderIds = extractOrderIds(orders);
     LOG.debug("getShipmentsMappedByOrderId: Retrieving shipments for {} orders.", orderIds.size());
 
-    List<ShippingDto> shipments = integration.getShipmentsByIds(new ArrayList<>(orderIds));
+    List<ShippingDto> shipments = integration.getShipmentsByOrderIds(new ArrayList<>(orderIds));
     LOG.debug("getShipmentsMappedByOrderId: Retrieved {} shipments.", shipments.size());
 
     return shipments.stream()
@@ -140,7 +140,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     }
     LOG.debug("getCompositeOrder: Successfully retrieved order with orderId {}.", orderId);
 
-    ShippingDto shipping = integration.getShipping(orderId);
+    ShippingDto shipping = integration.getShippingByOrderId(orderId);
     if(shipping == null) {
       LOG.warn("getCompositeOrder: No shipping details found for orderId {}.", orderId);
       return null;
@@ -171,7 +171,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     LOG.debug("createCompositeOrder: Inventory check and reduction successful");
 
     OrderDto createdOrder = createOrder(orderAggregateCreateDto.userId(), orderItems);
-    ShippingDto createdShipping = createShippingOrder(orderAggregateCreateDto.shippingAddress());
+    ShippingDto createdShipping = createShippingOrder(createdOrder.id(), orderAggregateCreateDto.shippingAddress());
     LOG.debug("createCompositeOrder: Order and shipping created - orderId: {}, shippingId: {}", createdOrder.id(), createdShipping.orderId());
 
     OrderAggregateDto orderAggregate = createOrderAggregateDto(
@@ -195,8 +195,8 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     return integration.createOrder(orderCreateDto);
   }
 
-  private ShippingDto createShippingOrder(String shippingAddress) {
-    ShippingCreateDto shippingCreateDto = new ShippingCreateDto(shippingAddress);
+  private ShippingDto createShippingOrder(Integer orderId, String shippingAddress) {
+    ShippingCreateDto shippingCreateDto = new ShippingCreateDto(orderId, shippingAddress);
     return integration.createShippingOrder(shippingCreateDto);
   }
 
@@ -246,7 +246,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
   private ShippingSummaryDto createShippingSummary(ShippingDto shipping) {
     return new ShippingSummaryDto(
       shipping.orderId(),
-      shipping.address(),
+      shipping.shippingAddress(),
       shipping.status()
     );
   }

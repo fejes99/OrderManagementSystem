@@ -19,6 +19,7 @@ public class Shipping {
   private String status;
 
   public Shipping() {
+    this.status = "Dispatched";
   }
 
   public Shipping(int orderId, String shippingAddress, String status) {

@@ -61,9 +61,12 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   public ProductDto getProduct(int productId) {
+    LOG.debug("getProduct: Search product for id: {}", productId);
     validateProductId(productId);
+
     Product product = repository.findById(productId)
       .orElseThrow(() -> new NotFoundException("Product with id " + productId + " not found"));
+    LOG.debug("getProduct: Found product for id: {}", productId);
     return mapper.entityToDto(product);
   }
 
@@ -75,7 +78,7 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   public ProductDto createProduct(ProductCreateDto productCreateDto) {
-    LOG.debug("createProduct: Creating product for with name: {}", productCreateDto.name());
+    LOG.debug("createProduct: Creating product with name: {}", productCreateDto.name());
 
     Product product = mapper.createDtoToEntity(productCreateDto);
     product = repository.save(product);

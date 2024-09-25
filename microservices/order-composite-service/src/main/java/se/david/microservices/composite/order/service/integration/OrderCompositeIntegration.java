@@ -111,8 +111,8 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public List<ShippingDto> getShipmentsByIds(List<Integer> ids) {
-    String idsParam = ids.stream()
+  public List<ShippingDto> getShipmentsByOrderIds(List<Integer> orderIds) {
+    String idsParam = orderIds.stream()
       .map(String::valueOf)
       .collect(Collectors.joining(","));
 
@@ -125,17 +125,17 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public ShippingDto getShipping(int orderId) {
+  public ShippingDto getShippingByOrderId(int orderId) {
     String url = shippingServiceUrl + orderId;
     return restTemplate.getForObject(url, ShippingDto.class);
   }
 
   @Override
-  public ShippingDto createShippingOrder(ShippingCreateDto shipping) {
+  public ShippingDto createShippingOrder(ShippingCreateDto shippingCreateDto) {
     String url = shippingServiceUrl;
     LOG.debug("Will post a new shipping to URL: {}", url);
 
-    ShippingDto shippingDto = restTemplate.postForObject(url, shipping, ShippingDto.class);
+    ShippingDto shippingDto = restTemplate.postForObject(url, shippingCreateDto, ShippingDto.class);
     assert shippingDto != null;
     LOG.debug("Created a shipping with orderId: {}", shippingDto.orderId());
 
@@ -143,20 +143,11 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public ShippingDto updateShippingStatus(int orderId, String status) {
+  public ShippingDto updateShippingStatusByOrderId(int orderId, String status) {
     String url = shippingServiceUrl + "/" + orderId + "/status";
     LOG.debug("Will update the shipping status for orderId: {} to status: {}", orderId, status);
 
     return restTemplate.patchForObject(url, status, ShippingDto.class);
-  }
-
-
-  @Override
-  public void deleteShipping(int shippingId) {
-    String url = shippingServiceUrl + shippingId;
-    LOG.debug("Will call the deleteShipping API on URL: {}", url);
-
-    restTemplate.delete(url);
   }
 
   @Override
