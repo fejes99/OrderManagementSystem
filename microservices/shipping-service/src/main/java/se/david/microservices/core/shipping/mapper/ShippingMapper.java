@@ -8,6 +8,5 @@ import se.david.microservices.core.shipping.domain.entity.Shipping;
 @Mapper(componentModel = "spring")
 public interface ShippingMapper {
   ShippingDto entityToDto(Shipping shipping);
-
   Shipping createDtoToEntity(ShippingCreateDto shippingCreateDto);
 }

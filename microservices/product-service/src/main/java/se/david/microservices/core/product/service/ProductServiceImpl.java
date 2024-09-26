@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
-import se.david.api.core.inventory.dto.InventoryDto;
 import se.david.api.core.product.dto.ProductCreateDto;
 import se.david.api.core.product.dto.ProductDto;
 import se.david.api.core.product.dto.ProductUpdateDto;
@@ -16,9 +15,7 @@ import se.david.microservices.core.product.domain.repository.ProductRepository;
 import se.david.microservices.core.product.mapper.ProductMapper;
 import se.david.util.http.ServiceUtil;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -64,10 +61,14 @@ public class ProductServiceImpl implements ProductService {
     LOG.debug("getProduct: Search product for id: {}", productId);
     validateProductId(productId);
 
-    Product product = repository.findById(productId)
-      .orElseThrow(() -> new NotFoundException("Product with id " + productId + " not found"));
+    Product product = findProductById(productId);
     LOG.debug("getProduct: Found product for id: {}", productId);
     return mapper.entityToDto(product);
+  }
+
+  private Product findProductById(int productId) {
+    return repository.findById(productId)
+      .orElseThrow(() -> new NotFoundException("Product with id " + productId + " not found"));
   }
 
   private void validateProductId(int productId) {
@@ -90,15 +91,14 @@ public class ProductServiceImpl implements ProductService {
   @Override
   public ProductDto updateProduct(int productId, ProductUpdateDto productUpdateDto) {
     validateProductId(productId);
-    LOG.debug("updateProduct: Creating product for with id: {}", productId);
+    LOG.debug("updateProduct: Updating product with id: {}", productId);
 
-    Product product = repository.findById(productId)
-      .orElseThrow(() -> new NotFoundException("Invalid productId: " + productId));
+    Product product = findProductById(productId);
 
     mapper.updateEntityWithDto(product, productUpdateDto);
     Product updatedProduct = repository.save(product);
 
-    LOG.debug("updateProduct: Successfully created product with id: {}", productId);
+    LOG.debug("updateProduct: Successfully updated product with id: {}", productId);
     return mapper.entityToDto(updatedProduct);
   }
 
@@ -108,11 +108,9 @@ public class ProductServiceImpl implements ProductService {
     LOG.debug("deleteProduct: Deleting product with id: {}", productId);
 
     validateProductId(productId);
-    Product product = repository.findById(productId)
-      .orElseThrow(() -> new NotFoundException("Product with id " + productId + " not found"));
+    Product product = findProductById(productId);
 
     repository.delete(product);
-
     LOG.debug("deleteProduct: Successfully deleted product with id: {}", productId);
   }
 }

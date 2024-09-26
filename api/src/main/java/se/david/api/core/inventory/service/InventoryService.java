@@ -92,7 +92,7 @@ public interface InventoryService {
       )
     }
   )
-  InventoryDto createInventoryStock(@RequestBody InventoryDto inventoryCreateRequest);
+  InventoryDto createInventoryStock(@RequestBody InventoryDto inventoryCreateDto);
 
   @DeleteMapping(
     value = "/inventories/{productId}",
@@ -148,7 +148,7 @@ public interface InventoryService {
       )
     }
   )
-  InventoryDto increaseStock(@RequestBody InventoryStockAdjustmentRequestDto inventoryIncreaseRequest);
+  InventoryDto increaseStock(@RequestBody InventoryStockAdjustmentRequestDto inventoryIncreaseDto);
 
   @PutMapping(
     value = "/inventories/reduceStock",
@@ -172,5 +172,5 @@ public interface InventoryService {
       )
     }
   )
-  void reduceStock(@RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceRequests);
+  void reduceStock(@RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos);
 }

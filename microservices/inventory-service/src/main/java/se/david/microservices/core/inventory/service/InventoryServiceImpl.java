@@ -72,17 +72,17 @@ public class InventoryServiceImpl implements InventoryService {
 
   @Override
   @Transactional
-  public InventoryDto createInventoryStock(InventoryDto inventoryCreateRequest) {
-    LOG.debug("createInventoryStock: Creating inventory for productId: {}", inventoryCreateRequest.productId());
+  public InventoryDto createInventoryStock(InventoryDto inventoryCreateDto) {
+    LOG.debug("createInventoryStock: Creating inventory for productId: {}", inventoryCreateDto.productId());
 
-    validateProductId(inventoryCreateRequest.productId());
+    validateProductId(inventoryCreateDto.productId());
 
-    repository.findById(inventoryCreateRequest.productId())
+    repository.findById(inventoryCreateDto.productId())
       .ifPresent(inventory -> {
-        throw new InvalidInputException("Inventory item already exists for productId: " + inventoryCreateRequest.productId());
+        throw new InvalidInputException("Inventory item already exists for productId: " + inventoryCreateDto.productId());
       });
 
-    Inventory inventory = mapper.dtoToEntity(inventoryCreateRequest);
+    Inventory inventory = mapper.dtoToEntity(inventoryCreateDto);
     inventory = repository.save(inventory);
 
     LOG.debug("createInventoryStock: Successfully created inventory for productId: {}, quantity: {}",
@@ -100,18 +100,17 @@ public class InventoryServiceImpl implements InventoryService {
     Inventory inventory = findInventoryByProductId(productId);
 
     repository.delete(inventory);
-
     LOG.debug("deleteInventoryStock: Successfully deleted inventory for productId: {}", productId);
   }
 
 
   @Override
   @Transactional
-  public InventoryDto increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseRequest) {
-    validateStockAdjustmentRequest(inventoryIncreaseRequest);
+  public InventoryDto increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseDto) {
+    validateStockAdjustmentRequest(inventoryIncreaseDto);
 
-    Inventory inventory = findInventoryByProductId(inventoryIncreaseRequest.productId());
-    adjustStock(inventory, inventoryIncreaseRequest.quantity());
+    Inventory inventory = findInventoryByProductId(inventoryIncreaseDto.productId());
+    adjustStock(inventory, inventoryIncreaseDto.quantity());
     LOG.debug("increaseStock: Increased stock for productId: {}, new quantity: {}",
       inventory.getProductId(), inventory.getQuantity());
 
@@ -131,8 +130,8 @@ public class InventoryServiceImpl implements InventoryService {
 
   @Override
   @Transactional
-  public void reduceStock(List<InventoryStockAdjustmentRequestDto> inventoryReduceRequests) {
-    inventoryReduceRequests.forEach(this::processStockReduction);
+  public void reduceStock(List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos) {
+    inventoryReduceDtos.forEach(this::processStockReduction);
   }
 
   private void processStockReduction(InventoryStockAdjustmentRequestDto reduceRequest) {

@@ -84,8 +84,8 @@ public class ShippingServiceImpl implements ShippingService {
 
     Shipping shipping = mapper.createDtoToEntity(shippingCreateDto);
     shipping = repository.save(shipping);
-    LOG.debug("createShippingOrder: Successfully created shipping for orderId: {}", shipping.getOrderId());
 
+    LOG.debug("createShippingOrder: Successfully created shipping for orderId: {}", shipping.getOrderId());
     return mapper.entityToDto(shipping);
   }
 
@@ -95,9 +95,9 @@ public class ShippingServiceImpl implements ShippingService {
     LOG.debug("updateShippingStatus: Updating shipping status to: {}", status);
 
     Shipping shipping = findShippingByOrderId(orderId);
-
     shipping.setStatus(status);
     Shipping updatedShipping = repository.save(shipping);
+
     LOG.debug("updateShippingStatus: Successfully updated shipping status to: {}", status);
     return mapper.entityToDto(updatedShipping);
   }

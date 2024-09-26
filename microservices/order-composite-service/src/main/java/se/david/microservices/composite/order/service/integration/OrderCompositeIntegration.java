@@ -14,6 +14,7 @@ import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
 import se.david.api.core.inventory.service.InventoryService;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
+import se.david.api.core.order.dto.OrderUpdateDto;
 import se.david.api.core.order.service.OrderService;
 import se.david.api.core.product.dto.ProductCreateDto;
 import se.david.api.core.product.dto.ProductDto;
@@ -198,11 +199,11 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public OrderDto createOrder(OrderCreateDto order) {
+  public OrderDto createOrder(OrderCreateDto orderCreateDto) {
     String url = orderServiceUrl;
     LOG.debug("Will post a new order to URL: {}", url);
 
-    OrderDto orderDto = restTemplate.postForObject(url, order, OrderDto.class);
+    OrderDto orderDto = restTemplate.postForObject(url, orderCreateDto, OrderDto.class);
     assert orderDto != null;
     LOG.debug("Created a order with id: {}", orderDto.id());
 
@@ -210,11 +211,11 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public OrderDto updateOrder(int orderId, OrderDto order) {
+  public OrderDto updateOrder(int orderId, OrderUpdateDto orderUpdateDto) {
     String url = orderServiceUrl + orderId;
     LOG.debug("Will update the order with id: {}", orderId);
 
-    restTemplate.put(url, order);
+    restTemplate.put(url, orderUpdateDto);
     return getOrder(orderId);
   }
 
@@ -234,11 +235,11 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public InventoryDto createInventoryStock(InventoryDto inventoryCreateRequest) {
+  public InventoryDto createInventoryStock(InventoryDto inventoryCreateDto) {
     String url = inventoryServiceUrl;
     LOG.debug("Will post a new inventory stock to URL: {}", url);
 
-    InventoryDto inventoryDto = restTemplate.postForObject(url, inventoryCreateRequest, InventoryDto.class);
+    InventoryDto inventoryDto = restTemplate.postForObject(url, inventoryCreateDto, InventoryDto.class);
     assert inventoryDto != null;
     LOG.debug("Created a inventory with productOd: {}", inventoryDto.productId());
 
@@ -254,18 +255,18 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   }
 
   @Override
-  public InventoryDto increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseRequest) {
+  public InventoryDto increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseDto) {
     String url = inventoryServiceUrl + "increaseStock";
     LOG.debug("Will increase stock for the requested product");
 
-    return restTemplate.patchForObject(url, inventoryIncreaseRequest, InventoryDto.class);
+    return restTemplate.patchForObject(url, inventoryIncreaseDto, InventoryDto.class);
   }
 
   @Override
-  public void reduceStock(List<InventoryStockAdjustmentRequestDto> inventoryReduceRequests) {
+  public void reduceStock(List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos) {
     String url = inventoryServiceUrl + "reduceStock";
     LOG.debug("Will reduce stock for the requested products");
 
-    restTemplate.put(url, inventoryReduceRequests, Void.class);
+    restTemplate.put(url, inventoryReduceDtos, Void.class);
   }
 }
