@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
+import se.david.api.core.inventory.dto.InventoryCreateDto;
 import se.david.api.core.inventory.dto.InventoryDto;
 import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
 
@@ -92,7 +93,7 @@ public interface InventoryService {
       )
     }
   )
-  InventoryDto createInventoryStock(@RequestBody InventoryDto inventoryCreateDto);
+  InventoryDto createInventoryStock(@RequestBody InventoryCreateDto inventoryCreateDto);
 
   @DeleteMapping(
     value = "/inventories/{productId}",
@@ -172,5 +173,5 @@ public interface InventoryService {
       )
     }
   )
-  void reduceStock(@RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos);
+  void reduceStocks(@RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos);
 }

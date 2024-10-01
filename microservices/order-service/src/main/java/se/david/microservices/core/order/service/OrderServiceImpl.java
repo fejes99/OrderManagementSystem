@@ -3,6 +3,7 @@ package se.david.microservices.core.order.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
@@ -37,6 +38,7 @@ public class OrderServiceImpl implements OrderService {
     this.itemMapper = itemMapper;
   }
 
+  @Transactional(readOnly = true)
   @Override
   public List<OrderDto> getOrders() {
     LOG.info("getOrders: Fetching all orders");
@@ -73,6 +75,7 @@ public class OrderServiceImpl implements OrderService {
     }
   }
 
+  @Transactional(readOnly = true)
   @Override
   public OrderDto getOrder(int orderId) {
     LOG.debug("getOrder: Search orders for orderId: {}", orderId);
@@ -93,18 +96,27 @@ public class OrderServiceImpl implements OrderService {
     }
   }
 
+  @Transactional
   @Override
   public OrderDto createOrder(OrderCreateDto orderCreateDto) {
     LOG.debug("createOrder: Creating order for userId: {}", orderCreateDto.userId());
-
     validateUserId(orderCreateDto.userId());
 
     Order order = mapper.createDtoToEntity(orderCreateDto);
+
+    Order finalOrder = order;
+    List<OrderItem> orderItems = orderCreateDto.orderItems().stream()
+      .map(itemMapper::createDtoToEntity)
+      .peek(orderItem -> orderItem.setOrder(finalOrder))
+      .collect(Collectors.toList());
+
+    order.setOrderItems(orderItems);
     order = repository.save(order);
 
     LOG.debug("createOrder: Successfully created order: {}", order);
     return mapper.entityToDto(order);
   }
+
 
   @Override
   public OrderDto updateOrder(int orderId, OrderUpdateDto orderUpdateDto) {

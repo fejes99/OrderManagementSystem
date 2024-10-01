@@ -36,6 +36,7 @@ public class ShippingServiceApplication {
 
   public static void main(String[] args) {
     ConfigurableApplicationContext context = SpringApplication.run(ShippingServiceApplication.class, args);
+
     String mongoDbHost = context.getEnvironment().getProperty("spring.data.mongodb.host");
     String mongoDbPort = context.getEnvironment().getProperty("spring.data.mongodb.port");
     LOG.info("Connected to MongoDb: {}:{}", mongoDbHost, mongoDbPort);

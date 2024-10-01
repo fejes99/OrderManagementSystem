@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
+import se.david.api.core.inventory.dto.InventoryCreateDto;
 import se.david.api.core.inventory.dto.InventoryDto;
 import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
 import se.david.api.core.inventory.service.InventoryService;
@@ -72,9 +73,8 @@ public class InventoryServiceImpl implements InventoryService {
 
   @Override
   @Transactional
-  public InventoryDto createInventoryStock(InventoryDto inventoryCreateDto) {
+  public InventoryDto createInventoryStock(InventoryCreateDto inventoryCreateDto) {
     LOG.debug("createInventoryStock: Creating inventory for productId: {}", inventoryCreateDto.productId());
-
     validateProductId(inventoryCreateDto.productId());
 
     repository.findById(inventoryCreateDto.productId())
@@ -82,7 +82,7 @@ public class InventoryServiceImpl implements InventoryService {
         throw new InvalidInputException("Inventory item already exists for productId: " + inventoryCreateDto.productId());
       });
 
-    Inventory inventory = mapper.dtoToEntity(inventoryCreateDto);
+    Inventory inventory = mapper.createDtoToEntity(inventoryCreateDto);
     inventory = repository.save(inventory);
 
     LOG.debug("createInventoryStock: Successfully created inventory for productId: {}, quantity: {}",
@@ -130,7 +130,7 @@ public class InventoryServiceImpl implements InventoryService {
 
   @Override
   @Transactional
-  public void reduceStock(List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos) {
+  public void reduceStocks(List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos) {
     inventoryReduceDtos.forEach(this::processStockReduction);
   }
 

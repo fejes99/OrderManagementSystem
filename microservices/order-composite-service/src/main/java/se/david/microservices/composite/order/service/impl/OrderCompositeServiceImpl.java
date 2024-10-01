@@ -38,6 +38,10 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     LOG.debug("getCompositeOrders: Starting to retrieve order aggregates.");
 
     List<OrderDto> orders = integration.getOrders();
+    if (orders == null || orders.isEmpty()) {
+      LOG.info("getCompositeOrders: No orders found.");
+      return Collections.emptyList();
+    }
     LOG.debug("getCompositeOrders: Retrieved {} orders.", orders.size());
 
     Map<Integer, ShippingDto> shipmentMap = getShipmentsMappedByOrderId(orders);
@@ -105,6 +109,10 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     LOG.debug("getCompositeOrdersByUser: Starting to retrieve order aggregates for userId {}.", userId);
 
     List<OrderDto> orders = integration.getOrdersByUser(userId);
+    if (orders == null || orders.isEmpty()) {
+      LOG.info("getCompositeOrdersByUser: No orders found for userId {}.", userId);
+      return Collections.emptyList();
+    }
     LOG.debug("getCompositeOrdersByUser: Retrieved {} orders for userId {}.", orders.size(), userId);
 
     if(orders.isEmpty()) {
@@ -187,7 +195,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
       .map(oi -> new InventoryStockAdjustmentRequestDto(oi.productId(), oi.quantity()))
       .collect(Collectors.toList());
 
-    integration.reduceStock(inventoryReduceRequests);
+    integration.reduceStocks(inventoryReduceRequests);
   }
 
   private OrderDto createOrder(int userId, List<OrderItemCreateDto> orderItems) {

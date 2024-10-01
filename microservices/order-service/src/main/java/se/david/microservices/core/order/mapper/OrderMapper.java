@@ -1,6 +1,7 @@
 package se.david.microservices.core.order.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;

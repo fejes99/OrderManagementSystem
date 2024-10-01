@@ -2,6 +2,7 @@ package se.david.microservices.core.order.domain.entity;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -28,10 +29,15 @@ public class Order {
   @Column(nullable = false)
   private Date createdAt;
 
-  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
   private List<OrderItem> orderItems;
 
   public Order() {
+    this.userId = 0;
+    this.totalPrice = 0;
+    this.status = "PENDING";
+    this.createdAt = new Date();
+    this.orderItems = new ArrayList<>();
   }
 
   public Order(int id, int userId, int totalPrice, String status, Date createdAt, List<OrderItem> orderItems) {
@@ -97,18 +103,5 @@ public class Order {
 
   public void setOrderItems(List<OrderItem> orderItems) {
     this.orderItems = orderItems;
-  }
-
-  @Override
-  public String toString() {
-    return "Order{" +
-      "id=" + id +
-      ", version=" + version +
-      ", userId=" + userId +
-      ", totalPrice=" + totalPrice +
-      ", status='" + status + '\'' +
-      ", createdAt=" + createdAt +
-      ", orderItems=" + orderItems +
-      '}';
   }
 }

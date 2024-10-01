@@ -1,6 +1,7 @@
 package se.david.microservices.core.inventory.mapper;
 
 import org.mapstruct.Mapper;
+import se.david.api.core.inventory.dto.InventoryCreateDto;
 import se.david.api.core.inventory.dto.InventoryDto;
 import se.david.microservices.core.inventory.domain.entity.Inventory;
 
@@ -8,4 +9,5 @@ import se.david.microservices.core.inventory.domain.entity.Inventory;
 public interface InventoryMapper {
   InventoryDto entityToDto(Inventory inventory);
   Inventory dtoToEntity(InventoryDto inventoryDto);
+  Inventory createDtoToEntity(InventoryCreateDto inventoryCreateDto);
 }
