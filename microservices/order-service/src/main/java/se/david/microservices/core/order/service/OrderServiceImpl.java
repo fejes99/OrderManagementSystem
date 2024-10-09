@@ -3,8 +3,12 @@ package se.david.microservices.core.order.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 import se.david.api.core.order.dto.OrderItemDto;
@@ -20,6 +24,7 @@ import se.david.microservices.core.order.mapper.OrderMapper;
 import se.david.util.http.ServiceUtil;
 
 import java.util.List;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,9 +34,11 @@ public class OrderServiceImpl implements OrderService {
   private final ServiceUtil serviceUtil;
   private final OrderMapper mapper;
   private final OrderItemMapper itemMapper;
+  private final Scheduler jdbcScheduler;
 
   @Autowired
-  public OrderServiceImpl(OrderRepository repository, ServiceUtil serviceUtil, OrderMapper mapper, OrderItemMapper itemMapper) {
+  public OrderServiceImpl(@Qualifier("jdbcScheduler") Scheduler jdbcScheduler, OrderRepository repository, ServiceUtil serviceUtil, OrderMapper mapper, OrderItemMapper itemMapper) {
+    this.jdbcScheduler = jdbcScheduler;
     this.repository = repository;
     this.serviceUtil = serviceUtil;
     this.mapper = mapper;
@@ -40,12 +47,18 @@ public class OrderServiceImpl implements OrderService {
 
   @Transactional(readOnly = true)
   @Override
-  public List<OrderDto> getOrders() {
+  public Flux<OrderDto> getOrders() {
     LOG.info("getOrders: Fetching all orders");
-    List<Order> orders = (List<Order>) repository.findAll();
-    return orders.stream()
+
+    return Mono.fromCallable(this::internalGetOrders)
+      .flatMapMany(Flux::fromIterable)
+      .subscribeOn(jdbcScheduler)
       .map(this::mapToOrderDtoWithServiceAddress)
-      .collect(Collectors.toList());
+      .doOnError(ex -> LOG.error("Error fetching orders", ex))
+      .log(LOG.getName(), Level.FINE);
+  }
+  private List<Order> internalGetOrders() {
+    return (List<Order>) repository.findAll();
   }
 
   private OrderDto mapToOrderDtoWithServiceAddress(Order order) {
@@ -60,13 +73,20 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public List<OrderDto> getOrdersByUser(int userId) {
+  public Flux<OrderDto> getOrdersByUser(int userId) {
     LOG.info("getOrdersByUser: Fetching all orders for userId: {}", userId);
     validateUserId(userId);
-    List<Order> orders = repository.findByUserId(userId);
-    return orders.stream()
+
+    return Mono.fromCallable(() -> findOrdersByUserId(userId))
+      .flatMapMany(Flux::fromIterable)
+      .subscribeOn(jdbcScheduler)
       .map(this::mapToOrderDtoWithServiceAddress)
-      .collect(Collectors.toList());
+      .doOnError(ex -> LOG.error("Error fetching orders for userId: {}", userId, ex))
+      .log(LOG.getName(), Level.FINE);
+  }
+
+  private List<Order> findOrdersByUserId(int userId) {
+    return repository.findByUserId(userId);
   }
 
   private void validateUserId(int userId) {
@@ -77,17 +97,20 @@ public class OrderServiceImpl implements OrderService {
 
   @Transactional(readOnly = true)
   @Override
-  public OrderDto getOrder(int orderId) {
-    LOG.debug("getOrder: Search orders for orderId: {}", orderId);
+  public Mono<OrderDto> getOrder(int orderId) {
+    LOG.debug("getOrder: Fetching order for orderId: {}", orderId);
     validateOrderId(orderId);
-    Order order = findOrderById(orderId);
-    LOG.debug("getOrder: Found order with orderId: {}", orderId);
-    return mapper.entityToDto(order);
+
+    return Mono.fromCallable(() -> findOrderById(orderId))
+      .subscribeOn(jdbcScheduler)
+      .map(mapper::entityToDto)
+      .doOnError(ex -> LOG.error("Error fetching order for orderId: {}", orderId, ex))
+      .log(LOG.getName(), Level.FINE);
   }
 
   private Order findOrderById(int orderId) {
     return repository.findById(orderId)
-      .orElseThrow(() -> new NotFoundException("No order found for: " + orderId));
+      .orElseThrow(() -> new NotFoundException("Order with id " + orderId + " not found"));
   }
 
   private void validateOrderId(int orderId) {
@@ -98,48 +121,61 @@ public class OrderServiceImpl implements OrderService {
 
   @Transactional
   @Override
-  public OrderDto createOrder(OrderCreateDto orderCreateDto) {
+  public Mono<OrderDto> createOrder(OrderCreateDto orderCreateDto) {
     LOG.debug("createOrder: Creating order for userId: {}", orderCreateDto.userId());
     validateUserId(orderCreateDto.userId());
 
-    Order order = mapper.createDtoToEntity(orderCreateDto);
+    return Mono.fromCallable(() -> internalCreateOrder(orderCreateDto))
+      .subscribeOn(jdbcScheduler)
+      .map(mapper::entityToDto)
+      .doOnSuccess(savedOrder -> LOG.debug("Successfully created order with id: {}", savedOrder.id()))
+      .doOnError(ex -> LOG.error("Error creating order", ex))
+      .log(LOG.getName(), Level.FINE);
+  }
 
-    Order finalOrder = order;
+  private Order internalCreateOrder(OrderCreateDto orderCreateDto) {
+    Order order = mapper.createDtoToEntity(orderCreateDto);
     List<OrderItem> orderItems = orderCreateDto.orderItems().stream()
       .map(itemMapper::createDtoToEntity)
-      .peek(orderItem -> orderItem.setOrder(finalOrder))
+      .peek(orderItem -> orderItem.setOrder(order))
       .collect(Collectors.toList());
-
     order.setOrderItems(orderItems);
-    order = repository.save(order);
-
-    LOG.debug("createOrder: Successfully created order: {}", order);
-    return mapper.entityToDto(order);
+    return repository.save(order);
   }
 
 
   @Override
-  public OrderDto updateOrder(int orderId, OrderUpdateDto orderUpdateDto) {
-    validateOrderId(orderId);
+  public Mono<OrderDto> updateOrder(int orderId, OrderUpdateDto orderUpdateDto) {
     LOG.debug("updateOrder: Updating order with id: {}", orderId);
+    validateOrderId(orderId);
 
+    return Mono.fromCallable(() -> internalUpdateOrder(orderId, orderUpdateDto))
+      .subscribeOn(jdbcScheduler)
+      .map(mapper::entityToDto)
+      .doOnSuccess(updatedOrder -> LOG.debug("Successfully updated order with id: {}", updatedOrder.id()))
+      .doOnError(ex -> LOG.error("Error updating order with id: {}", orderId, ex))
+      .log(LOG.getName(), Level.FINE);
+  }
+
+  private Order internalUpdateOrder(int orderId, OrderUpdateDto orderUpdateDto) {
     Order order = findOrderById(orderId);
-
     mapper.updateEntityToDto(order, orderUpdateDto);
-    Order updatedOrder = repository.save(order);
-
-    LOG.debug("updateOrder: Successfully updated order with id: {}", orderId);
-    return mapper.entityToDto(updatedOrder);
+    return repository.save(order);
   }
 
   @Override
-  public void deleteOrder(int orderId) {
+  public Mono<Void> deleteOrder(int orderId) {
     LOG.debug("deleteOrder: Deleting order with id: {}", orderId);
-
     validateOrderId(orderId);
-    Order order = findOrderById(orderId);
 
+    return Mono.fromRunnable(() -> internalDeleteOrder(orderId))
+      .subscribeOn(jdbcScheduler)
+      .doOnError(ex -> LOG.error("Error deleting order with id: {}", orderId, ex))
+      .then();
+  }
+
+  private void internalDeleteOrder(int orderId) {
+    Order order = findOrderById(orderId);
     repository.delete(order);
-    LOG.debug("deleteOrder: Successfully deleted order with id: {}", orderId);
   }
 }

@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import se.david.api.composite.order.dto.OrderAggregateCreateDto;
 import se.david.api.composite.order.dto.OrderAggregateDto;
 
@@ -34,7 +36,7 @@ public interface OrderCompositeService {
       )
     }
   )
-  List<OrderAggregateDto> getCompositeOrders();
+  Flux<OrderAggregateDto> getCompositeOrders();
 
   @GetMapping(
     value = "/order-composite/user/{userId}",
@@ -58,7 +60,7 @@ public interface OrderCompositeService {
       )
     }
   )
-  List<OrderAggregateDto> getCompositeOrdersByUser(@PathVariable int userId);
+  Flux<OrderAggregateDto> getCompositeOrdersByUser(@PathVariable int userId);
 
   @GetMapping(
     value = "/order-composite/{orderId}",
@@ -82,7 +84,7 @@ public interface OrderCompositeService {
       )
     }
   )
-  OrderAggregateDto getCompositeOrder(@PathVariable int orderId);
+  Mono<OrderAggregateDto> getCompositeOrder(@PathVariable int orderId);
 
 
   @PostMapping(
@@ -107,5 +109,5 @@ public interface OrderCompositeService {
       )
     }
   )
-  OrderAggregateDto createCompositeOrder(@RequestBody OrderAggregateCreateDto orderAggregateCreateDto) throws Exception;
+  Mono<OrderAggregateDto> createCompositeOrder(@RequestBody OrderAggregateCreateDto orderAggregateCreateDto) throws Exception;
 }

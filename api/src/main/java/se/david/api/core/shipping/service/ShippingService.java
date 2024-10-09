@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import se.david.api.core.shipping.dto.ShippingCreateDto;
 import se.david.api.core.shipping.dto.ShippingDto;
 
@@ -34,7 +36,7 @@ public interface ShippingService {
       )
     }
   )
-  List<ShippingDto> getShipments();
+  Flux<ShippingDto> getShipments();
 
   @GetMapping(
     value = "/shipments/byOrdersIds",
@@ -66,7 +68,7 @@ public interface ShippingService {
       )
     }
   )
-  List<ShippingDto> getShipmentsByOrderIds(@RequestParam List<Integer> orderIds);
+  Flux<ShippingDto> getShipmentsByOrderIds(@RequestParam List<Integer> orderIds);
 
   @GetMapping(
     value = "/shipments/order/{orderId}",
@@ -98,7 +100,7 @@ public interface ShippingService {
       )
     }
   )
-  ShippingDto getShippingByOrderId(@PathVariable int orderId);
+  Mono<ShippingDto> getShippingByOrderId(@PathVariable int orderId);
 
   @PostMapping(
     value = "/shipments",
@@ -122,7 +124,7 @@ public interface ShippingService {
       )
     }
   )
-  ShippingDto createShippingOrder(@RequestBody ShippingCreateDto shippingCreateDto);
+  Mono<ShippingDto> createShippingOrder(@RequestBody ShippingCreateDto shippingCreateDto);
 
   @PutMapping(
     value = "/shipments/order/{orderId}",
@@ -166,5 +168,5 @@ public interface ShippingService {
       )
     }
   )
-  ShippingDto updateShippingStatusByOrderId(@PathVariable int orderId, @RequestBody String status);
+  Mono<ShippingDto> updateShippingStatusByOrderId(@PathVariable int orderId, @RequestBody String status);
 }

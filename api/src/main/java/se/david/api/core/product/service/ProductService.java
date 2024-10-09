@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import se.david.api.core.product.dto.ProductCreateDto;
 import se.david.api.core.product.dto.ProductDto;
 import se.david.api.core.product.dto.ProductUpdateDto;
@@ -34,7 +36,7 @@ public interface ProductService {
       )
     }
   )
-  List<ProductDto> getProducts();
+  Flux<ProductDto> getProducts();
 
   @GetMapping(
     value = "/products/byIds",
@@ -66,7 +68,7 @@ public interface ProductService {
       )
     }
   )
-  List<ProductDto> getProductsByIds(@RequestParam List<Integer> ids);
+  Flux<ProductDto> getProductsByIds(@RequestParam List<Integer> ids);
 
   @GetMapping(
     value = "/products/{productId}",
@@ -98,7 +100,7 @@ public interface ProductService {
       )
     }
   )
-  ProductDto getProduct(@PathVariable int productId);
+  Mono<ProductDto> getProduct(@PathVariable int productId);
 
   @PostMapping(
     value = "/products",
@@ -126,7 +128,7 @@ public interface ProductService {
       )
     }
   )
-  ProductDto createProduct(@RequestBody ProductCreateDto productCreateDto);
+  Mono<ProductDto> createProduct(@RequestBody ProductCreateDto productCreateDto);
 
   @PutMapping(
     value = "/products/{productId}",
@@ -163,7 +165,7 @@ public interface ProductService {
       )
     }
   )
-  ProductDto updateProduct(@PathVariable int productId, @RequestBody ProductUpdateDto productUpdateDto);
+  Mono<ProductDto> updateProduct(@PathVariable int productId, @RequestBody ProductUpdateDto productUpdateDto);
 
   @DeleteMapping(
     value = "/products/{productId}")
@@ -190,5 +192,5 @@ public interface ProductService {
       )
     }
   )
-  void deleteProduct(@PathVariable int productId);
+  Mono<Void> deleteProduct(@PathVariable int productId);
 }

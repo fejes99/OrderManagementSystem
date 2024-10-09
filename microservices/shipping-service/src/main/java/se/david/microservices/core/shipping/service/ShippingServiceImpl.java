@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import se.david.api.core.shipping.dto.ShippingCreateDto;
 import se.david.api.core.shipping.dto.ShippingDto;
 import se.david.api.core.shipping.service.ShippingService;
@@ -15,6 +17,7 @@ import se.david.microservices.core.shipping.mapper.ShippingMapper;
 import se.david.util.http.ServiceUtil;
 
 import java.util.List;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 @RestController
@@ -32,12 +35,13 @@ public class ShippingServiceImpl implements ShippingService {
   }
 
   @Override
-  public List<ShippingDto> getShipments() {
+  public Flux<ShippingDto> getShipments() {
     LOG.info("getShipments: Fetching all shipments");
-    List<Shipping> shipments = (List<Shipping>) repository.findAll();
-    return shipments.stream()
+
+    return repository.findAll()
       .map(this::mapToShippingDtoWithServiceAddress)
-      .collect(Collectors.toList());
+      .doOnError(ex -> LOG.error("Error fetching shipments", ex))
+      .log(LOG.getName(), Level.FINE);
   }
 
   private ShippingDto mapToShippingDtoWithServiceAddress(Shipping shipping) {
@@ -45,31 +49,30 @@ public class ShippingServiceImpl implements ShippingService {
   }
 
   @Override
-  public List<ShippingDto> getShipmentsByOrderIds(List<Integer> orderIds) {
+  public Flux<ShippingDto> getShipmentsByOrderIds(List<Integer> orderIds) {
     LOG.info("getShipmentsByOrderIds: Fetching all shipments by list of orderIds");
 
-    List<Shipping> shipments = repository.findByOrderIdIn(orderIds);
-    return shipments.stream()
+    return repository.findByOrderIdIn(orderIds)
       .map(this::mapToShippingDtoWithServiceAddress)
-      .collect(Collectors.toList());
+      .doOnError(ex -> LOG.error("Error fetching shipments by orderIds", ex))
+      .log(LOG.getName(), Level.FINE);
   }
 
   @Override
-  public ShippingDto getShippingByOrderId(int orderId) {
+  public Mono<ShippingDto> getShippingByOrderId(int orderId) {
     LOG.debug("getShipping: Search shipping for orderId: {}", orderId);
     validateOrderId(orderId);
 
-    Shipping shipping = findShippingByOrderId(orderId);
-    LOG.debug("getShipping: Found shipping for orderId: {}", orderId);
-    return mapper.entityToDto(shipping);
+    return findShippingByOrderId(orderId)
+      .map(mapper::entityToDto)
+      .doOnError(ex -> LOG.error("Error fetching shipping for orderId: {}", orderId, ex))
+      .log(LOG.getName(), Level.FINE);
   }
 
-  private Shipping findShippingByOrderId(int orderId) {
-    Shipping shipping = repository.findByOrderId(orderId);
-    if (shipping == null) {
-      throw new NotFoundException("No shipping found for orderId: " + orderId);
-    }
-    return shipping;
+  private Mono<Shipping> findShippingByOrderId(int orderId) {
+    return repository.findByOrderId(orderId)
+      .switchIfEmpty(Mono.error(new NotFoundException("No product found for productId: " + orderId)))
+      .log(LOG.getName(), Level.FINE);
   }
 
   private void validateOrderId(int orderId) {
@@ -79,26 +82,31 @@ public class ShippingServiceImpl implements ShippingService {
   }
 
   @Override
-  public ShippingDto createShippingOrder(ShippingCreateDto shippingCreateDto) {
-    LOG.debug("createShippingOrder: Creating product for orderId: {}", shippingCreateDto.orderId());
+  public Mono<ShippingDto> createShippingOrder(ShippingCreateDto shippingCreateDto) {
+    LOG.debug("createShippingOrder: Creating shipping for orderId: {}", shippingCreateDto.orderId());
 
     Shipping shipping = mapper.createDtoToEntity(shippingCreateDto);
-    shipping = repository.save(shipping);
 
-    LOG.debug("createShippingOrder: Successfully created shipping for orderId: {}", shipping.getOrderId());
-    return mapper.entityToDto(shipping);
+    return repository.save(shipping)
+      .map(mapper::entityToDto)
+      .doOnSuccess(savedShipping -> LOG.debug("Successfully created shipping for orderId: {}", savedShipping.orderId()))
+      .doOnError(ex -> LOG.error("Error creating shipping", ex))
+      .log(LOG.getName(), Level.FINE);
   }
 
   @Override
-  public ShippingDto updateShippingStatusByOrderId(int orderId, String status) {
+  public Mono<ShippingDto> updateShippingStatusByOrderId(int orderId, String status) {
     validateOrderId(orderId);
     LOG.debug("updateShippingStatus: Updating shipping status to: {}", status);
 
-    Shipping shipping = findShippingByOrderId(orderId);
-    shipping.setStatus(status);
-    Shipping updatedShipping = repository.save(shipping);
-
-    LOG.debug("updateShippingStatus: Successfully updated shipping status to: {}", status);
-    return mapper.entityToDto(updatedShipping);
+    return findShippingByOrderId(orderId)
+      .flatMap(shipping -> {
+        shipping.setStatus(status);
+        return repository.save(shipping);
+      })
+      .map(mapper::entityToDto)
+      .doOnSuccess(updatedShipping -> LOG.debug("Successfully updated shipping status to: {}", status))
+      .doOnError(ex -> LOG.error("Error updating shipping status for orderId: {}", orderId, ex))
+      .log(LOG.getName(), Level.FINE);
   }
 }

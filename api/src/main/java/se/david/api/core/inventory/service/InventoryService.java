@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import se.david.api.core.inventory.dto.InventoryCreateDto;
 import se.david.api.core.inventory.dto.InventoryDto;
 import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
@@ -33,7 +35,7 @@ public interface InventoryService {
       )
     }
   )
-  List<InventoryDto> getInventoryStocks();
+  Flux<InventoryDto> getInventoryStocks();
 
   @GetMapping(
     value = "/inventories/{productId}",
@@ -65,7 +67,7 @@ public interface InventoryService {
       )
     }
   )
-  InventoryDto getInventoryStock(@PathVariable int productId);
+  Mono<InventoryDto> getInventoryStock(@PathVariable int productId);
 
   @PostMapping(
     value = "/inventories",
@@ -93,35 +95,7 @@ public interface InventoryService {
       )
     }
   )
-  InventoryDto createInventoryStock(@RequestBody InventoryCreateDto inventoryCreateDto);
-
-  @DeleteMapping(
-    value = "/inventories/{productId}",
-    produces = "application/json")
-  @Operation(
-    summary = "Delete inventory stock for a product",
-    description = "Deletes the inventory stock item associated with the specified product ID. The product must exist in the inventory for it to be deleted.",
-    parameters = {
-      @Parameter(
-        name = "productId",
-        in = ParameterIn.PATH,
-        required = true,
-        description = "The ID of the product for which to delete stock information",
-        schema = @Schema(type = "integer")
-      )
-    },
-    responses = {
-      @ApiResponse(
-        responseCode = "200",
-        description = "Successfully deleted the inventory stock item"
-      ),
-      @ApiResponse(
-        responseCode = "404",
-        description = "Inventory item with the specified product ID not found"
-      )
-    }
-  )
-  void deleteInventoryStock(@PathVariable int productId);
+  Mono<InventoryDto> createInventoryStock(@RequestBody InventoryCreateDto inventoryCreateDto);
 
   @PutMapping(
     value = "/inventories/increaseStock",
@@ -149,7 +123,7 @@ public interface InventoryService {
       )
     }
   )
-  InventoryDto increaseStock(@RequestBody InventoryStockAdjustmentRequestDto inventoryIncreaseDto);
+  Mono<InventoryDto> increaseStock(@RequestBody InventoryStockAdjustmentRequestDto inventoryIncreaseDto);
 
   @PutMapping(
     value = "/inventories/reduceStock",
@@ -173,5 +147,33 @@ public interface InventoryService {
       )
     }
   )
-  void reduceStocks(@RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos);
+  Mono<Void> reduceStocks(@RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos);
+
+  @DeleteMapping(
+    value = "/inventories/{productId}",
+    produces = "application/json")
+  @Operation(
+    summary = "Delete inventory stock for a product",
+    description = "Deletes the inventory stock item associated with the specified product ID. The product must exist in the inventory for it to be deleted.",
+    parameters = {
+      @Parameter(
+        name = "productId",
+        in = ParameterIn.PATH,
+        required = true,
+        description = "The ID of the product for which to delete stock information",
+        schema = @Schema(type = "integer")
+      )
+    },
+    responses = {
+      @ApiResponse(
+        responseCode = "200",
+        description = "Successfully deleted the inventory stock item"
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Inventory item with the specified product ID not found"
+      )
+    }
+  )
+  Mono<Void> deleteInventoryStock(@PathVariable int productId);
 }

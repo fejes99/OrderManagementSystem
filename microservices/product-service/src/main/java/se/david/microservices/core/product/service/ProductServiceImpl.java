@@ -3,7 +3,11 @@ package se.david.microservices.core.product.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import se.david.api.core.product.dto.ProductCreateDto;
 import se.david.api.core.product.dto.ProductDto;
 import se.david.api.core.product.dto.ProductUpdateDto;
@@ -16,7 +20,6 @@ import se.david.microservices.core.product.mapper.ProductMapper;
 import se.david.util.http.ServiceUtil;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class ProductServiceImpl implements ProductService {
@@ -25,21 +28,29 @@ public class ProductServiceImpl implements ProductService {
   private final ServiceUtil serviceUtil;
   private final ProductMapper mapper;
 
+  private final Scheduler jdbcScheduler;
+
   @Autowired
-  public ProductServiceImpl(ProductRepository repository, ServiceUtil serviceUtil, ProductMapper mapper) {
+  public ProductServiceImpl(@Qualifier("jdbcScheduler") Scheduler jdbcScheduler, ProductRepository repository, ServiceUtil serviceUtil, ProductMapper mapper) {
+    this.jdbcScheduler = jdbcScheduler;
     this.repository = repository;
     this.serviceUtil = serviceUtil;
     this.mapper = mapper;
   }
 
   @Override
-  public List<ProductDto> getProducts() {
-    LOG.info("getProducts: Fetching all products");
+  public Flux<ProductDto> getProducts() {
+    LOG.info("Fetching all products");
 
-    List<Product> products = (List<Product>) repository.findAll();
-    return products.stream()
+    return Mono.fromCallable(this::internalGetProducts)
+      .flatMapMany(Flux::fromIterable)
+      .subscribeOn(jdbcScheduler)
       .map(this::mapToProductDtoWithServiceAddress)
-      .toList();
+      .doOnError(e -> LOG.error("Failed to fetch products", e));
+  }
+
+  private List<Product> internalGetProducts() {
+    return (List<Product>) repository.findAll();
   }
 
   private ProductDto mapToProductDtoWithServiceAddress(Product product) {
@@ -47,23 +58,30 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public List<ProductDto> getProductsByIds(List<Integer> ids) {
-    LOG.info("getProductsByIds: Fetching all products by list of ids");
+  public Flux<ProductDto> getProductsByIds(List<Integer> ids) {
+    LOG.info("Fetching products for IDs: {}", ids);
 
-    List<Product> products = repository.findByIdIn(ids);
-    return products.stream()
+    return Mono.fromCallable(() -> internalGetProductsByIds(ids))
+      .flatMapMany(Flux::fromIterable)
+      .subscribeOn(jdbcScheduler)
       .map(this::mapToProductDtoWithServiceAddress)
-      .collect(Collectors.toList());
+      .doOnError(e -> LOG.error("Failed to fetch products by IDs", e));
   }
 
+  private List<Product> internalGetProductsByIds(List<Integer> ids) {
+    return repository.findByIdIn(ids);
+  }
+
+
   @Override
-  public ProductDto getProduct(int productId) {
-    LOG.debug("getProduct: Search product for id: {}", productId);
+  public Mono<ProductDto> getProduct(int productId) {
+    LOG.debug("Fetching product by ID: {}", productId);
     validateProductId(productId);
 
-    Product product = findProductById(productId);
-    LOG.debug("getProduct: Found product for id: {}", productId);
-    return mapper.entityToDto(product);
+    return Mono.fromCallable(() -> findProductById(productId))
+      .subscribeOn(jdbcScheduler)
+      .map(mapper::entityToDto)
+      .doOnError(e -> LOG.error("Failed to fetch product with ID: {}", productId, e));
   }
 
   private Product findProductById(int productId) {
@@ -78,39 +96,54 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public ProductDto createProduct(ProductCreateDto productCreateDto) {
-    LOG.debug("createProduct: Creating product with name: {}", productCreateDto.name());
+  public Mono<ProductDto> createProduct(ProductCreateDto productCreateDto) {
+    LOG.debug("Creating product: {}", productCreateDto.name());
 
+    return Mono.fromCallable(() -> internalCreateProduct(productCreateDto))
+      .subscribeOn(jdbcScheduler)
+      .map(mapper::entityToDto)
+      .doOnSuccess(productDto -> LOG.debug("Created product with ID: {}", productDto.id()))
+      .doOnError(e -> LOG.error("Failed to create product", e));
+  }
+
+  private Product internalCreateProduct(ProductCreateDto productCreateDto) {
     Product product = mapper.createDtoToEntity(productCreateDto);
-    product = repository.save(product);
-    LOG.debug("createProduct: Successfully created product with name: {}, price: {}", product.getName(), product.getPrice());
-
-    return mapper.entityToDto(product);
+    return repository.save(product);  // Blocking call
   }
 
   @Override
-  public ProductDto updateProduct(int productId, ProductUpdateDto productUpdateDto) {
+  public Mono<ProductDto> updateProduct(int productId, ProductUpdateDto productUpdateDto) {
+    LOG.debug("Updating product with ID: {}", productId);
     validateProductId(productId);
-    LOG.debug("updateProduct: Updating product with id: {}", productId);
 
-    Product product = findProductById(productId);
+    return Mono.fromCallable(() -> internalUpdateProduct(productId, productUpdateDto))
+      .subscribeOn(jdbcScheduler)
+      .map(mapper::entityToDto)
+      .doOnSuccess(updatedProduct -> LOG.debug("Updated product with ID: {}", updatedProduct.id()))
+      .doOnError(e -> LOG.error("Failed to update product with ID: {}", productId, e));
+  }
 
+  private Product internalUpdateProduct(int productId, ProductUpdateDto productUpdateDto) {
+    Product product = repository.findById(productId)
+      .orElseThrow(() -> new NotFoundException("Product with ID " + productId + " not found"));
     mapper.updateEntityWithDto(product, productUpdateDto);
-    Product updatedProduct = repository.save(product);
-
-    LOG.debug("updateProduct: Successfully updated product with id: {}", productId);
-    return mapper.entityToDto(updatedProduct);
+    return repository.save(product);
   }
 
-
   @Override
-  public void deleteProduct(int productId) {
-    LOG.debug("deleteProduct: Deleting product with id: {}", productId);
-
+  public Mono<Void> deleteProduct(int productId) {
+    LOG.debug("Deleting product with ID: {}", productId);
     validateProductId(productId);
-    Product product = findProductById(productId);
 
+    return Mono.fromRunnable(() -> internalDeleteProduct(productId))
+      .subscribeOn(jdbcScheduler)
+      .doOnError(e -> LOG.error("Failed to delete product with ID: {}", productId, e))
+      .then();
+  }
+
+  private void internalDeleteProduct(int productId) {
+    Product product = repository.findById(productId)
+      .orElseThrow(() -> new NotFoundException("Product with ID " + productId + " not found"));
     repository.delete(product);
-    LOG.debug("deleteProduct: Successfully deleted product with id: {}", productId);
   }
 }

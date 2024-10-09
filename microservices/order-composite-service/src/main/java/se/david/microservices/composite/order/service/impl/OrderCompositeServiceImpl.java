@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import se.david.api.composite.order.dto.*;
 import se.david.api.composite.order.service.OrderCompositeService;
 import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
@@ -34,178 +36,107 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
   }
 
   @Override
-  public List<OrderAggregateDto> getCompositeOrders() {
+  public Flux<OrderAggregateDto> getCompositeOrders() {
     LOG.debug("getCompositeOrders: Starting to retrieve order aggregates.");
 
-    List<OrderDto> orders = integration.getOrders();
-    if (orders == null || orders.isEmpty()) {
-      LOG.info("getCompositeOrders: No orders found.");
-      return Collections.emptyList();
-    }
-    LOG.debug("getCompositeOrders: Retrieved {} orders.", orders.size());
-
-    Map<Integer, ShippingDto> shipmentMap = getShipmentsMappedByOrderId(orders);
-    LOG.debug("getCompositeOrders: Mapped {} shipments to orders.", shipmentMap.size());
-
-    Map<Integer, ProductDto> productMap = getProductMapFromOrders(orders);
-    LOG.debug("getCompositeOrders: Mapped {} products from orders.", productMap.size());
-
-    List<OrderAggregateDto> orderAggregates = orders.stream()
-      .map(order -> {
-        ShippingDto shipping = shipmentMap.get(order.id());
-        return createOrderAggregateDto(order, shipping, new ArrayList<>(productMap.values()), order.orderItems(), serviceUtil.getServiceAddress());
-      })
-      .collect(Collectors.toList());
-    LOG.debug("getCompositeOrders: Created {} order aggregate DTOs.", orderAggregates.size());
-
-    return orderAggregates;
+    return integration.getOrders()
+      .flatMap(order -> Mono.zip(
+            Mono.just(order),
+            getShippingForOrder(order.id()),
+            getProductsForOrder(order.orderItems())
+          )
+          .map(tuple -> createOrderAggregateDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), order.orderItems(), serviceUtil.getServiceAddress()))
+          .doOnSuccess(agg -> LOG.debug("getCompositeOrders: Created order aggregate DTO for orderId: {}", order.id()))
+      )
+      .onErrorResume(e -> {
+        LOG.error("Error retrieving composite orders", e);
+        return Flux.empty();
+      });
   }
 
-  private Map<Integer, ShippingDto> getShipmentsMappedByOrderId(List<OrderDto> orders) {
-    Set<Integer> orderIds = extractOrderIds(orders);
-    LOG.debug("getShipmentsMappedByOrderId: Retrieving shipments for {} orders.", orderIds.size());
-
-    List<ShippingDto> shipments = integration.getShipmentsByOrderIds(new ArrayList<>(orderIds));
-    LOG.debug("getShipmentsMappedByOrderId: Retrieved {} shipments.", shipments.size());
-
-    return shipments.stream()
-      .collect(Collectors.toMap(ShippingDto::orderId, shippingDto -> shippingDto));
+  private Mono<ShippingDto> getShippingForOrder(int orderId) {
+    LOG.debug("getShippingForOrder: Retrieving shipping for orderId {}", orderId);
+    return integration.getShippingByOrderId(orderId)
+      .doOnError(e -> LOG.error("Error retrieving shipping for orderId: {}", orderId, e));
   }
 
-  private Set<Integer> extractOrderIds(List<OrderDto> orders) {
-    return orders.stream()
-      .map(OrderDto::id)
-      .collect(Collectors.toSet());
-  }
-
-  private Map<Integer, ProductDto> getProductMapFromOrders(List<OrderDto> orders) {
-    List<OrderItemDto> orderItems = collectAllOrderItems(orders);
-    List<Integer> productIds = extractProductIds(orderItems, OrderItemDto::productId);
-    LOG.debug("getProductMapFromOrders: Retrieving products for {} unique product IDs.", productIds.size());
-
-    List<ProductDto> products = integration.getProductsByIds(productIds);
-    LOG.debug("getProductMapFromOrders: Retrieved {} products.", products.size());
-
-    return products.stream()
-      .collect(Collectors.toMap(ProductDto::id, product -> product));
-  }
-
-  private <T> List<Integer> extractProductIds(List<T> orderItems, Function<T, Integer> productIdMapper) {
-    return orderItems.stream()
-      .map(productIdMapper)
+  private Mono<List<ProductDto>> getProductsForOrder(List<OrderItemDto> orderItems) {
+    List<Integer> productIds = orderItems.stream()
+      .map(OrderItemDto::productId)
       .distinct()
       .collect(Collectors.toList());
-  }
+    LOG.debug("getProductsForOrder: Retrieving products for productIds: {}", productIds);
 
-
-  private List<OrderItemDto> collectAllOrderItems(List<OrderDto> orders) {
-    return orders.stream()
-      .flatMap(order -> order.orderItems().stream())
-      .collect(Collectors.toList());
+    return integration.getProductsByIds(productIds)
+      .collectList()
+      .doOnError(e -> LOG.error("Error retrieving products for order", e));
   }
 
   @Override
-  public List<OrderAggregateDto> getCompositeOrdersByUser(int userId) {
+  public Flux<OrderAggregateDto> getCompositeOrdersByUser(int userId) {
     LOG.debug("getCompositeOrdersByUser: Starting to retrieve order aggregates for userId {}.", userId);
 
-    List<OrderDto> orders = integration.getOrdersByUser(userId);
-    if (orders == null || orders.isEmpty()) {
-      LOG.info("getCompositeOrdersByUser: No orders found for userId {}.", userId);
-      return Collections.emptyList();
-    }
-    LOG.debug("getCompositeOrdersByUser: Retrieved {} orders for userId {}.", orders.size(), userId);
-
-    if(orders.isEmpty()) {
-      LOG.info("getCompositeOrdersByUser: No orders found for userId {}.", userId);
-      return Collections.emptyList();
-    }
-
-    Map<Integer, ShippingDto> shipmentMap = getShipmentsMappedByOrderId(orders);
-    LOG.debug("getCompositeOrdersByUser: Mapped {} shipments to orders.", shipmentMap.size());
-
-    Map<Integer, ProductDto> productMap = getProductMapFromOrders(orders);
-    LOG.debug("getCompositeOrdersByUser: Mapped {} products from orders.", productMap.size());
-
-    List<OrderAggregateDto> orderAggregates = orders.stream()
-      .map(order -> {
-        ShippingDto shipping = shipmentMap.get(order.id());
-        return createOrderAggregateDto(order, shipping, new ArrayList<>(productMap.values()), order.orderItems(), serviceUtil.getServiceAddress());
-      })
-      .collect(Collectors.toList());
-    LOG.debug("getCompositeOrdersByUser: Created {} order aggregate DTOs for userId {}.", orderAggregates.size(), userId);
-
-    return orderAggregates;
+    return integration.getOrdersByUser(userId)
+      .flatMap(order -> Mono.zip(
+            Mono.just(order),
+            getShippingForOrder(order.id()),
+            getProductsForOrder(order.orderItems())
+          )
+          .map(tuple -> createOrderAggregateDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), order.orderItems(), serviceUtil.getServiceAddress()))
+          .doOnSuccess(agg -> LOG.debug("getCompositeOrdersByUser: Created order aggregate DTO for orderId: {}", order.id()))
+      )
+      .onErrorResume(e -> {
+        LOG.error("Error retrieving composite orders for userId: {}", userId, e);
+        return Flux.empty();
+      });
   }
 
   @Override
-  public OrderAggregateDto getCompositeOrder(int orderId) {
+  public Mono<OrderAggregateDto> getCompositeOrder(int orderId) {
     LOG.debug("getCompositeOrder: Starting to retrieve order for orderId {}.", orderId);
 
-    OrderDto order = integration.getOrder(orderId);
-    if(order == null) {
-      LOG.warn("getCompositeOrder: No order found for orderId {}.", orderId);
-      return null; // todo: implement bad request exception
-    }
-    LOG.debug("getCompositeOrder: Successfully retrieved order with orderId {}.", orderId);
-
-    ShippingDto shipping = integration.getShippingByOrderId(orderId);
-    if(shipping == null) {
-      LOG.warn("getCompositeOrder: No shipping details found for orderId {}.", orderId);
-      return null;
-    }
-    LOG.debug("getCompositeOrder: Successfully retrieved shipping details for orderId {}.", orderId);
-
-    List<OrderItemDto> orderItems = order.orderItems();
-    List<ProductDto> products = integration.getProductsByIds(extractProductIds(orderItems, OrderItemDto::productId));
-    LOG.debug("getCompositeOrder: Extracted {} unique products from order items for orderId {}.", products.size(), orderId);
-
-    OrderAggregateDto orderAggregate = createOrderAggregateDto(order, shipping, products, orderItems, serviceUtil.getServiceAddress());
-    LOG.debug("getCompositeOrder: Created OrderAggregateDto for orderId {}.", orderId);
-
-    return orderAggregate;
+    return integration.getOrder(orderId)
+      .flatMap(order -> Mono.zip(
+            Mono.just(order),
+            getShippingForOrder(orderId),
+            getProductsForOrder(order.orderItems())
+          )
+          .map(tuple -> createOrderAggregateDto(tuple.getT1(), tuple.getT2(), tuple.getT3(), order.orderItems(), serviceUtil.getServiceAddress()))
+          .doOnSuccess(agg -> LOG.debug("getCompositeOrder: Created OrderAggregateDto for orderId: {}", orderId))
+      )
+      .onErrorResume(e -> {
+        LOG.error("Error retrieving composite order for orderId: {}", orderId, e);
+        return Mono.empty();
+      });
   }
 
-  // todo: implement saga pattern
   @Override
-  public OrderAggregateDto createCompositeOrder(OrderAggregateCreateDto orderAggregateCreateDto) throws Exception {
-    LOG.debug("createCompositeOrder: Starting to creating order");
+  public Mono<OrderAggregateDto> createCompositeOrder(OrderAggregateCreateDto orderAggregateCreateDto) {
+    LOG.debug("createCompositeOrder: Starting to create composite order");
 
-    List<OrderItemCreateDto> orderItems = orderAggregateCreateDto.orderItemCreateDtos();
-    List<Integer> productIds = extractProductIds(orderItems, OrderItemCreateDto::productId);
-    List<ProductDto> products = integration.getProductsByIds(productIds);
-    LOG.debug("createCompositeOrder: Retrieved products: {}", productIds);
-
-    reduceInventory(orderItems);
-    LOG.debug("createCompositeOrder: Inventory check and reduction successful");
-
-    OrderDto createdOrder = createOrder(orderAggregateCreateDto.userId(), orderItems);
-    ShippingDto createdShipping = createShippingOrder(createdOrder.id(), orderAggregateCreateDto.shippingAddress());
-    LOG.debug("createCompositeOrder: Order and shipping created - orderId: {}, shippingId: {}", createdOrder.id(), createdShipping.orderId());
-
-    OrderAggregateDto orderAggregate = createOrderAggregateDto(
-      createdOrder, createdShipping, products, createdOrder.orderItems(), serviceUtil.getServiceAddress());
-    LOG.debug("createCompositeOrder: OrderAggregateDto created for orderId: {}", createdOrder.id());
-
-    return orderAggregate;
+    return getProductsForOrderItems(orderAggregateCreateDto.orderItemCreateDtos())
+      .flatMap(products ->
+         integration.createOrder(new OrderCreateDto(orderAggregateCreateDto.userId(), orderAggregateCreateDto.orderItemCreateDtos()))
+          .flatMap(createdOrder -> integration.createShippingOrder(new ShippingCreateDto(createdOrder.id(), orderAggregateCreateDto.shippingAddress()))
+            .map(createdShipping -> createOrderAggregateDto(createdOrder, createdShipping, products, createdOrder.orderItems(), serviceUtil.getServiceAddress()))
+          ))
+      .doOnSuccess(agg -> LOG.debug("createCompositeOrder: Successfully created composite order with orderId: {}", agg.orderId()))
+      .onErrorResume(e -> {
+        LOG.error("Error creating composite order", e);
+        return Mono.empty();
+      });
   }
 
-  private void reduceInventory(List<OrderItemCreateDto> orderItems) {
-    List<InventoryStockAdjustmentRequestDto> inventoryReduceRequests = orderItems
-      .stream()
-      .map(oi -> new InventoryStockAdjustmentRequestDto(oi.productId(), oi.quantity()))
+  private Mono<List<ProductDto>> getProductsForOrderItems(List<OrderItemCreateDto> orderItems) {
+    List<Integer> productIds = orderItems.stream()
+      .map(OrderItemCreateDto::productId)
+      .distinct()
       .collect(Collectors.toList());
+    LOG.debug("getProductsForOrderItems: Retrieving products for productIds: {}", productIds);
 
-    integration.reduceStocks(inventoryReduceRequests);
-  }
-
-  private OrderDto createOrder(int userId, List<OrderItemCreateDto> orderItems) {
-    OrderCreateDto orderCreateDto = new OrderCreateDto(userId, orderItems);
-    return integration.createOrder(orderCreateDto);
-  }
-
-  private ShippingDto createShippingOrder(Integer orderId, String shippingAddress) {
-    ShippingCreateDto shippingCreateDto = new ShippingCreateDto(orderId, shippingAddress);
-    return integration.createShippingOrder(shippingCreateDto);
+    return integration.getProductsByIds(productIds)
+      .collectList()
+      .doOnError(e -> LOG.error("Error retrieving products for order items", e));
   }
 
   private OrderAggregateDto createOrderAggregateDto(

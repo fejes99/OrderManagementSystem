@@ -33,7 +33,10 @@ within the Master's program at the Faculty of Technical Sciences, University of 
 - **Endpoints**:
     - `GET /inventories`: Retrieve inventory levels for all products
     - `GET /inventories/{productId}`: Retrieve inventory stock for a specific product
-    - `PUT /inventories/{productId}`: Update inventory stock for a product
+    - `POST /inventories`: Create a new inventory stock
+    - `PUT /inventories/increaseStock`: Increase inventory stock for a product
+    - `PUT /inventories/reduceStock`: Reduce inventory stocks for products
+    - `DELETE /inventories/{productId}`: Delete inventory stock for a product
 - **Database**: NoSQL (MongoDB)
 - **Database Schema**:
   ```mermaid
@@ -81,11 +84,10 @@ within the Master's program at the Faculty of Technical Sciences, University of 
 
 - **Endpoints**:
     - `GET /shipments`: Retrieve all shipments
-    - `GET /products/byIds`: Retrieve shipments by list of order ids
-    - `GET /shipments/{id}`: Retrieve shipping details for a specific order
+    - `GET /shipments/byOrdersIds`: Retrieve shipments by list of order ids
+    - `GET /shipments/order/{orderId}`: Retrieve shipping details for a specific order
     - `POST /shipments`: Create a shipping order
-    - `PUT /shipments/{id}`: Update shipments status
-    - `DELETE /shipments/{id}`: Delete shipping
+    - `PUT /shipments/order/{orderId}`: Update shipments status for a specific order
 - **Database**: NoSQL (MongoDB)
 - **Database Schema**:
   ```mermaid
@@ -179,7 +181,7 @@ the focus is on business logic and microservices interaction.
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/your-repo/inventory-management-microservices.git
+   git clone https://github.com/fejes99/OrderManagementSystem.git
    ```
 
 2. **Run each microservice**:

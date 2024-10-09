@@ -10,11 +10,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 @SpringBootApplication
 @ComponentScan("se.david")
 public class OrderServiceApplication {
   private static final Logger LOG = LoggerFactory.getLogger(OrderServiceApplication.class);
+  private final Integer threadPoolSize;
+  private final Integer taskQueueSize;
 
   @Value("${api.common.version}")
   private String apiVersion;
@@ -32,6 +36,19 @@ public class OrderServiceApplication {
         .title(apiTitle)
         .description(apiDescription)
         .version(apiVersion));
+  }
+
+  public OrderServiceApplication(
+    @Value("${app.threadPoolSize:10}") Integer threadPoolSize,
+    @Value("${app.taskQueueSize:100}") Integer taskQueueSize) {
+    this.threadPoolSize = threadPoolSize;
+    this.taskQueueSize = taskQueueSize;
+  }
+
+  @Bean
+  public Scheduler jdbcScheduler() {
+    LOG.info("Creates a jdbcScheduler with thread pool size = {}", threadPoolSize);
+    return Schedulers.newBoundedElastic(threadPoolSize, taskQueueSize, "jdbc-pool");
   }
 
   public static void main(String[] args) {

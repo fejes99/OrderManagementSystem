@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 import se.david.api.core.order.dto.OrderUpdateDto;
@@ -34,7 +36,7 @@ public interface OrderService {
       )
     }
   )
-  List<OrderDto> getOrders();
+  Flux<OrderDto> getOrders();
 
   @GetMapping(
     value = "/orders/user/{userId}",
@@ -66,7 +68,7 @@ public interface OrderService {
       )
     }
   )
-  List<OrderDto> getOrdersByUser(@PathVariable int userId);
+  Flux<OrderDto> getOrdersByUser(@PathVariable int userId);
 
   @GetMapping(
     value = "/orders/{orderId}",
@@ -98,7 +100,7 @@ public interface OrderService {
       )
     }
   )
-  OrderDto getOrder(@PathVariable int orderId);
+  Mono<OrderDto> getOrder(@PathVariable int orderId);
 
   @PostMapping(
     value = "/orders",
@@ -122,7 +124,7 @@ public interface OrderService {
       )
     }
   )
-  OrderDto createOrder(@RequestBody OrderCreateDto orderCreateDto);
+  Mono<OrderDto> createOrder(@RequestBody OrderCreateDto orderCreateDto);
 
   @PutMapping(
     value = "/orders/{orderId}",
@@ -159,7 +161,7 @@ public interface OrderService {
       )
     }
   )
-  OrderDto updateOrder(@PathVariable int orderId, @RequestBody OrderUpdateDto orderUpdateDto);
+  Mono<OrderDto> updateOrder(@PathVariable int orderId, @RequestBody OrderUpdateDto orderUpdateDto);
 
   @DeleteMapping(
     value = "/orders/{orderId}")
@@ -186,5 +188,5 @@ public interface OrderService {
       )
     }
   )
-  void deleteOrder(@PathVariable int orderId);
+  Mono<Void> deleteOrder(@PathVariable int orderId);
 }

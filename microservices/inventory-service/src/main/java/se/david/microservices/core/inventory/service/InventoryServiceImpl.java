@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import se.david.api.core.inventory.dto.InventoryCreateDto;
 import se.david.api.core.inventory.dto.InventoryDto;
 import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
@@ -18,7 +20,7 @@ import se.david.microservices.core.inventory.mapper.InventoryMapper;
 import se.david.util.http.ServiceUtil;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.logging.Level;
 
 @RestController
 public class InventoryServiceImpl implements InventoryService {
@@ -35,12 +37,11 @@ public class InventoryServiceImpl implements InventoryService {
   }
 
   @Override
-  public List<InventoryDto> getInventoryStocks() {
+  public Flux<InventoryDto> getInventoryStocks() {
     LOG.info("getInventoryStocks: Fetching all inventory stocks");
-    List<Inventory> inventories = (List<Inventory>) repository.findAll();
-    return inventories.stream()
+    return repository.findAll()
       .map(this::mapToInventoryDtoWithServiceAddress)
-      .collect(Collectors.toList());
+      .log(LOG.getName(), Level.FINE);
   }
 
   private InventoryDto mapToInventoryDtoWithServiceAddress(Inventory inventory) {
@@ -48,12 +49,12 @@ public class InventoryServiceImpl implements InventoryService {
   }
 
   @Override
-  public InventoryDto getInventoryStock(int productId) {
+  public Mono<InventoryDto> getInventoryStock(int productId) {
     LOG.debug("getInventoryStock: Search stock for productId: {}", productId);
     validateProductId(productId);
-    Inventory inventory = findInventoryByProductId(productId);
-    LOG.debug("getInventoryStock: Found stock for productId: {}", productId);
-    return mapper.entityToDto(inventory);
+    return findInventoryByProductId(productId)
+      .map(mapper::entityToDto)
+      .log(LOG.getName(), Level.FINE);
   }
 
   private void validateProductId(int productId) {
@@ -62,59 +63,53 @@ public class InventoryServiceImpl implements InventoryService {
     }
   }
 
-  private Inventory findInventoryByProductId(int productId) {
-    Inventory inventory = repository.findByProductId(productId);
-    if (inventory == null) {
-      throw new NotFoundException("No product found for productId: " + productId);
-    }
-    return inventory;
+  private Mono<Inventory> findInventoryByProductId(int productId) {
+    return repository.findByProductId(productId)
+      .switchIfEmpty(Mono.error(new NotFoundException("No product found for productId: " + productId)))
+      .log(LOG.getName(), Level.FINE);
   }
-
 
   @Override
   @Transactional
-  public InventoryDto createInventoryStock(InventoryCreateDto inventoryCreateDto) {
+  public Mono<InventoryDto> createInventoryStock(InventoryCreateDto inventoryCreateDto) {
     LOG.debug("createInventoryStock: Creating inventory for productId: {}", inventoryCreateDto.productId());
     validateProductId(inventoryCreateDto.productId());
 
-    repository.findById(inventoryCreateDto.productId())
-      .ifPresent(inventory -> {
-        throw new InvalidInputException("Inventory item already exists for productId: " + inventoryCreateDto.productId());
-      });
-
-    Inventory inventory = mapper.createDtoToEntity(inventoryCreateDto);
-    inventory = repository.save(inventory);
-
-    LOG.debug("createInventoryStock: Successfully created inventory for productId: {}, quantity: {}",
-      inventory.getProductId(), inventory.getQuantity());
-
-    return mapper.entityToDto(inventory);
+    return repository.findByProductId(inventoryCreateDto.productId())
+      .flatMap(existing -> Mono.error(new InvalidInputException("Inventory item already exists for productId: " + inventoryCreateDto.productId())))
+      .switchIfEmpty(Mono.defer(() -> {
+        Inventory inventory = mapper.createDtoToEntity(inventoryCreateDto);
+        return repository.save(inventory).map(mapper::entityToDto);
+      }))
+      .cast(InventoryDto.class)
+      .log(LOG.getName(), Level.FINE);
   }
+
 
   @Override
   @Transactional
-  public void deleteInventoryStock(int productId) {
+  public Mono<Void> deleteInventoryStock(int productId) {
     LOG.debug("deleteInventoryStock: Deleting inventory for productId: {}", productId);
-
     validateProductId(productId);
-    Inventory inventory = findInventoryByProductId(productId);
-
-    repository.delete(inventory);
-    LOG.debug("deleteInventoryStock: Successfully deleted inventory for productId: {}", productId);
+    return findInventoryByProductId(productId)
+      .flatMap(inventory -> repository.delete(inventory).then(Mono.<Void>empty()))
+      .log(LOG.getName(), Level.FINE);
   }
+
 
 
   @Override
   @Transactional
-  public InventoryDto increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseDto) {
+  public Mono<InventoryDto> increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseDto) {
     validateStockAdjustmentRequest(inventoryIncreaseDto);
 
-    Inventory inventory = findInventoryByProductId(inventoryIncreaseDto.productId());
-    adjustStock(inventory, inventoryIncreaseDto.quantity());
-    LOG.debug("increaseStock: Increased stock for productId: {}, new quantity: {}",
-      inventory.getProductId(), inventory.getQuantity());
-
-    return mapper.entityToDto(inventory);
+    return findInventoryByProductId(inventoryIncreaseDto.productId())
+      .flatMap(inventory -> {
+        adjustStock(inventory, inventoryIncreaseDto.quantity());
+        return repository.save(inventory)
+          .map(mapper::entityToDto);
+      })
+      .log(LOG.getName(), Level.FINE);
   }
 
   private void validateStockAdjustmentRequest(InventoryStockAdjustmentRequestDto request) {
@@ -125,24 +120,27 @@ public class InventoryServiceImpl implements InventoryService {
 
   private void adjustStock(Inventory inventory, int adjustmentQuantity) {
     inventory.setQuantity(inventory.getQuantity() + adjustmentQuantity);
-    repository.save(inventory);
   }
 
   @Override
   @Transactional
-  public void reduceStocks(List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos) {
-    inventoryReduceDtos.forEach(this::processStockReduction);
+  public Mono<Void> reduceStocks(List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos) {
+    return Flux.fromIterable(inventoryReduceDtos)
+      .flatMap(this::processStockReduction)
+      .then()
+      .log(LOG.getName(), Level.FINE);
   }
 
-  private void processStockReduction(InventoryStockAdjustmentRequestDto reduceRequest) {
+  private Mono<Void> processStockReduction(InventoryStockAdjustmentRequestDto reduceRequest) {
     validateStockAdjustmentRequest(reduceRequest);
 
-    Inventory inventory = findInventoryByProductId(reduceRequest.productId());
-    ensureSufficientStock(inventory, reduceRequest.quantity());
-    adjustStock(inventory, -reduceRequest.quantity());
-
-    LOG.debug("reduceStock: Reduced stock for productId: {}, reduced by: {}, new quantity: {}",
-      inventory.getProductId(), reduceRequest.quantity(), inventory.getQuantity());
+    return findInventoryByProductId(reduceRequest.productId())
+      .flatMap(inventory -> {
+        ensureSufficientStock(inventory, reduceRequest.quantity());
+        adjustStock(inventory, -reduceRequest.quantity());
+        return repository.save(inventory).then();
+      })
+      .log(LOG.getName(), Level.FINE);
   }
 
   private void ensureSufficientStock(Inventory inventory, int quantityToReduce) {
