@@ -9,4 +9,5 @@ import se.david.microservices.core.shipping.domain.entity.Shipping;
 public interface ShippingMapper {
   ShippingDto entityToDto(Shipping shipping);
   Shipping createDtoToEntity(ShippingCreateDto shippingCreateDto);
+  ShippingCreateDto entityToCreateDto(Shipping shipping);
 }

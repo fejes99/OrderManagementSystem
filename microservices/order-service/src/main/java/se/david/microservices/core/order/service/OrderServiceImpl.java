@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
@@ -123,23 +124,29 @@ public class OrderServiceImpl implements OrderService {
   @Override
   public Mono<OrderDto> createOrder(OrderCreateDto orderCreateDto) {
     LOG.debug("createOrder: Creating order for userId: {}", orderCreateDto.userId());
+
     validateUserId(orderCreateDto.userId());
 
     return Mono.fromCallable(() -> internalCreateOrder(orderCreateDto))
       .subscribeOn(jdbcScheduler)
       .map(mapper::entityToDto)
+      .onErrorMap(DuplicateKeyException.class, ex ->
+        new InvalidInputException("Duplicate order for userId: " + orderCreateDto.userId()))
       .doOnSuccess(savedOrder -> LOG.debug("Successfully created order with id: {}", savedOrder.id()))
-      .doOnError(ex -> LOG.error("Error creating order", ex))
+      .doOnError(ex -> LOG.error("Error creating order for userId: {}", orderCreateDto.userId(), ex))
       .log(LOG.getName(), Level.FINE);
   }
 
   private Order internalCreateOrder(OrderCreateDto orderCreateDto) {
     Order order = mapper.createDtoToEntity(orderCreateDto);
+
     List<OrderItem> orderItems = orderCreateDto.orderItems().stream()
       .map(itemMapper::createDtoToEntity)
       .peek(orderItem -> orderItem.setOrder(order))
       .collect(Collectors.toList());
+
     order.setOrderItems(orderItems);
+
     return repository.save(order);
   }
 
@@ -147,19 +154,25 @@ public class OrderServiceImpl implements OrderService {
   @Override
   public Mono<OrderDto> updateOrder(int orderId, OrderUpdateDto orderUpdateDto) {
     LOG.debug("updateOrder: Updating order with id: {}", orderId);
+
     validateOrderId(orderId);
 
     return Mono.fromCallable(() -> internalUpdateOrder(orderId, orderUpdateDto))
       .subscribeOn(jdbcScheduler)
       .map(mapper::entityToDto)
+      .onErrorMap(IllegalArgumentException.class, ex ->
+        new InvalidInputException("Invalid orderId: " + orderId))
       .doOnSuccess(updatedOrder -> LOG.debug("Successfully updated order with id: {}", updatedOrder.id()))
       .doOnError(ex -> LOG.error("Error updating order with id: {}", orderId, ex))
       .log(LOG.getName(), Level.FINE);
   }
 
+
   private Order internalUpdateOrder(int orderId, OrderUpdateDto orderUpdateDto) {
     Order order = findOrderById(orderId);
+
     mapper.updateEntityToDto(order, orderUpdateDto);
+
     return repository.save(order);
   }
 

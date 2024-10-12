@@ -8,7 +8,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import se.david.api.composite.order.dto.*;
 import se.david.api.composite.order.service.OrderCompositeService;
-import se.david.api.core.inventory.dto.InventoryStockAdjustmentRequestDto;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 import se.david.api.core.order.dto.OrderItemDto;
@@ -19,7 +18,6 @@ import se.david.microservices.composite.order.service.integration.OrderComposite
 import se.david.util.http.ServiceUtil;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
@@ -115,16 +113,32 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     LOG.debug("createCompositeOrder: Starting to create composite order");
 
     return getProductsForOrderItems(orderAggregateCreateDto.orderItemCreateDtos())
-      .flatMap(products ->
-         integration.createOrder(new OrderCreateDto(orderAggregateCreateDto.userId(), orderAggregateCreateDto.orderItemCreateDtos()))
-          .flatMap(createdOrder -> integration.createShippingOrder(new ShippingCreateDto(createdOrder.id(), orderAggregateCreateDto.shippingAddress()))
-            .map(createdShipping -> createOrderAggregateDto(createdOrder, createdShipping, products, createdOrder.orderItems(), serviceUtil.getServiceAddress()))
-          ))
+      .flatMap(products -> createOrder(orderAggregateCreateDto)
+        .flatMap(order -> createShipping(order, orderAggregateCreateDto)
+          .map(shipping -> createOrderAggregateDto(order, shipping, products, order.orderItems(), serviceUtil.getServiceAddress()))
+        )
+      )
       .doOnSuccess(agg -> LOG.debug("createCompositeOrder: Successfully created composite order with orderId: {}", agg.orderId()))
-      .onErrorResume(e -> {
-        LOG.error("Error creating composite order", e);
-        return Mono.empty();
-      });
+      .onErrorResume(this::handleOrderCreationError);
+  }
+
+  private Mono<OrderDto> createOrder(OrderAggregateCreateDto orderAggregateCreateDto) {
+    LOG.debug("createOrder: Creating order for userId {}", orderAggregateCreateDto.userId());
+    OrderCreateDto orderCreateDto = new OrderCreateDto(orderAggregateCreateDto.userId(), orderAggregateCreateDto.orderItemCreateDtos());
+    return integration.createOrder(orderCreateDto)
+      .doOnError(e -> LOG.error("Error creating order for userId {}", orderAggregateCreateDto.userId(), e));
+  }
+
+  private Mono<ShippingDto> createShipping(OrderDto order, OrderAggregateCreateDto orderAggregateCreateDto) {
+    LOG.debug("createShipping: Creating shipping for orderId {}", order.id());
+    ShippingCreateDto shippingCreateDto = new ShippingCreateDto(order.id(), orderAggregateCreateDto.shippingAddress());
+    return integration.createShippingOrder(shippingCreateDto)
+      .doOnError(e -> LOG.error("Error creating shipping for orderId {}", order.id(), e));
+  }
+
+  private Mono<OrderAggregateDto> handleOrderCreationError(Throwable e) {
+    LOG.error("Error creating composite order", e);
+    return Mono.empty();
   }
 
   private Mono<List<ProductDto>> getProductsForOrderItems(List<OrderItemCreateDto> orderItems) {

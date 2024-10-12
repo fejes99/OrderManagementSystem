@@ -72,7 +72,6 @@ public class ProductServiceImpl implements ProductService {
     return repository.findByIdIn(ids);
   }
 
-
   @Override
   public Mono<ProductDto> getProduct(int productId) {
     LOG.debug("Fetching product by ID: {}", productId);

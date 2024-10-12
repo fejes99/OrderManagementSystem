@@ -16,7 +16,8 @@ within the Master's program at the Faculty of Technical Sciences, University of 
     - `POST /products`: Create a new product
     - `PUT /products/{id}`: Update an existing product
     - `DELETE /products/{id}`: Delete a product
-- **Database**: SQL (MySQL/PostgreSQL)
+  - **Swagger UI**: `/swagger-ui/index.html`
+- **Database**: SQL (MySQL)
 - **Database Schema**:
   ```mermaid
   classDiagram
@@ -37,6 +38,7 @@ within the Master's program at the Faculty of Technical Sciences, University of 
     - `PUT /inventories/increaseStock`: Increase inventory stock for a product
     - `PUT /inventories/reduceStock`: Reduce inventory stocks for products
     - `DELETE /inventories/{productId}`: Delete inventory stock for a product
+  - **Swagger UI**: `/swagger-ui/index.html`
 - **Database**: NoSQL (MongoDB)
 - **Database Schema**:
   ```mermaid
@@ -56,7 +58,8 @@ within the Master's program at the Faculty of Technical Sciences, University of 
     - `POST /orders`: Create a new order
     - `PUT /orders/{id}`: Update an existing order (e.g., status)
     - `DELETE /orders/{id}`: Delete an order
-- **Database**: SQL (MySQL/PostgreSQL)
+  - **Swagger UI**: `/swagger-ui/index.html`
+- **Database**: SQL (MySQL)
 - **Database Schema**:
 
   ```mermaid
@@ -88,6 +91,7 @@ within the Master's program at the Faculty of Technical Sciences, University of 
     - `GET /shipments/order/{orderId}`: Retrieve shipping details for a specific order
     - `POST /shipments`: Create a shipping order
     - `PUT /shipments/order/{orderId}`: Update shipments status for a specific order
+  - **Swagger UI**: `/swagger-ui/index.html`
 - **Database**: NoSQL (MongoDB)
 - **Database Schema**:
   ```mermaid
@@ -106,6 +110,8 @@ within the Master's program at the Faculty of Technical Sciences, University of 
     - `GET /order-composite/user/{userId}`: Retrieve all order for specific user
     - `GET /order-composite/{id}`: Retrieve an order along with shipping and order details
     - `POST /order-composite`: Create a new order
+    - `GET /actuator/health`: Check the health status of the Order Composite Service
+  - **Swagger UI**: `/swagger-ui/index.html`
 - **Database**: None (Acts as an orchestrator)
 
 ## Architecture Diagrams
@@ -184,12 +190,30 @@ the focus is on business logic and microservices interaction.
    git clone https://github.com/fejes99/OrderManagementSystem.git
    ```
 
-2. **Run each microservice**:
+2. **Build and Run**:
 
-    - Each service can be run independently using Docker or directly on your local machine.
+   ```bash
+   ./gradlew build && docker-compose build && docker-compose up -d
+   ```
 
-3. **Testing**:
-    - Use tools like Postman to interact with the services via their RESTful APIs.
+3. **Shut Down**:
+   ```bash
+   docker-compose down
+   ```
+
+4. **Testing**:
+  - Use tools like Postman to interact with the services via their RESTful APIs.
+
+## RabbitMQ
+
+RabbitMQ is used as the message broker in the system, facilitating communication between the microservices. You can access the RabbitMQ management console at:
+
+- **URL**: `http://localhost:15672/#/queues`
+- **Username**: `guest`
+- **Password**: `guest`
+
+This is configured for local development. Ensure that RabbitMQ is up and running using Docker, and the necessary queues are created for communication between the microservices.
+
 
 ## License
 

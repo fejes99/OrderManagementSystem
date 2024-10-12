@@ -14,7 +14,7 @@ public class Shipping {
   private Integer version;
 
   @Indexed(unique = true)
-  private int orderId;
+  private Integer orderId;
   private String shippingAddress;
   private String status;
 

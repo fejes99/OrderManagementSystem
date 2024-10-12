@@ -3,6 +3,7 @@ package se.david.microservices.core.inventory.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
@@ -96,8 +97,6 @@ public class InventoryServiceImpl implements InventoryService {
       .log(LOG.getName(), Level.FINE);
   }
 
-
-
   @Override
   @Transactional
   public Mono<InventoryDto> increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseDto) {
@@ -109,6 +108,8 @@ public class InventoryServiceImpl implements InventoryService {
         return repository.save(inventory)
           .map(mapper::entityToDto);
       })
+      .onErrorMap(DuplicateKeyException.class, ex ->
+        new InvalidInputException("Duplicate key for productId: " + inventoryIncreaseDto.productId()))
       .log(LOG.getName(), Level.FINE);
   }
 
@@ -128,6 +129,8 @@ public class InventoryServiceImpl implements InventoryService {
     return Flux.fromIterable(inventoryReduceDtos)
       .flatMap(this::processStockReduction)
       .then()
+      .onErrorMap(DuplicateKeyException.class, ex ->
+        new InvalidInputException("Duplicate key encountered during stock reduction"))
       .log(LOG.getName(), Level.FINE);
   }
 
@@ -140,6 +143,8 @@ public class InventoryServiceImpl implements InventoryService {
         adjustStock(inventory, -reduceRequest.quantity());
         return repository.save(inventory).then();
       })
+      .onErrorMap(DuplicateKeyException.class, ex ->
+        new InvalidInputException("Duplicate key for productId: " + reduceRequest.productId()))
       .log(LOG.getName(), Level.FINE);
   }
 

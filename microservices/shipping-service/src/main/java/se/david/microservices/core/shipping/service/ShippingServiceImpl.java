@@ -3,6 +3,7 @@ package se.david.microservices.core.shipping.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -89,8 +90,10 @@ public class ShippingServiceImpl implements ShippingService {
 
     return repository.save(shipping)
       .map(mapper::entityToDto)
+      .onErrorMap(DuplicateKeyException.class, ex ->
+        new InvalidInputException("Duplicate key for orderId: " + shippingCreateDto.orderId()))
       .doOnSuccess(savedShipping -> LOG.debug("Successfully created shipping for orderId: {}", savedShipping.orderId()))
-      .doOnError(ex -> LOG.error("Error creating shipping", ex))
+      .doOnError(ex -> LOG.error("Error creating shipping for orderId: {}", shippingCreateDto.orderId(), ex))
       .log(LOG.getName(), Level.FINE);
   }
 
@@ -105,8 +108,11 @@ public class ShippingServiceImpl implements ShippingService {
         return repository.save(shipping);
       })
       .map(mapper::entityToDto)
-      .doOnSuccess(updatedShipping -> LOG.debug("Successfully updated shipping status to: {}", status))
+      .onErrorMap(IllegalArgumentException.class, ex ->
+        new InvalidInputException("Invalid orderId: " + orderId))
+      .doOnSuccess(updatedShipping -> LOG.debug("Successfully updated shipping status for orderId: {}", updatedShipping.orderId()))
       .doOnError(ex -> LOG.error("Error updating shipping status for orderId: {}", orderId, ex))
       .log(LOG.getName(), Level.FINE);
   }
+
 }

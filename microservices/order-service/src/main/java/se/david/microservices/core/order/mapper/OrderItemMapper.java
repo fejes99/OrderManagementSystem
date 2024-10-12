@@ -10,5 +10,6 @@ import se.david.microservices.core.order.domain.entity.OrderItem;
 public interface OrderItemMapper {
   @Mapping(target = "orderId", source = "order.id")
   OrderItemDto entityToDto(OrderItem orderItem);
+  OrderItemCreateDto entityToCreateDto(OrderItem orderItem);
   OrderItem createDtoToEntity(OrderItemCreateDto orderItemCreateDto);
 }
