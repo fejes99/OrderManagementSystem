@@ -68,6 +68,8 @@ services:
     ports:
       - "27017:27017"
     command: mongod
+    volumes:
+      - ./db-init/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
     healthcheck:
       test: "mongostat -n 1"
       interval: 5s
@@ -84,12 +86,13 @@ services:
       - MYSQL_USER=user
       - MYSQL_PASSWORD=pwd
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db-init/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: "/usr/bin/mysql --user=user --password=pwd --execute \"SHOW DATABASES;\""
       interval: 5s
       timeout: 2s
       retries: 60
+
 
 
   rabbitmq:

@@ -218,3 +218,13 @@ This is configured for local development. Ensure that RabbitMQ is up and running
 ## License
 
 This project is licensed under the MIT License.
+
+## Software Components (Design Patterns and Components):
+
+The system follows several design patterns, utilizing well-known components:
+
+1. **Service Discovery**: Netflix Eureka and Spring Cloud LoadBalancer.
+2. **Edge Server**: Spring Cloud Gateway and Spring Security OAuth.
+3. **Centralized Configuration**: Spring Cloud Configuration Server.
+4. **Circuit Breaker**: Resilience4j.
+5. **Distributed Tracing**: Micrometer Tracing and Zipkin.
