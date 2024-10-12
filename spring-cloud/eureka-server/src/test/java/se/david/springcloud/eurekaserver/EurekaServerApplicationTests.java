@@ -1,9 +1,13 @@
-package se.david.microservices.core.shipping;
+package se.david.springcloud.eurekaserver;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ShippingServiceApplicationTests {
+class EurekaServerApplicationTests {
+
+  @Test
+  void contextLoads() {
+  }
 
 }

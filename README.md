@@ -196,35 +196,52 @@ the focus is on business logic and microservices interaction.
    ./gradlew build && docker-compose build && docker-compose up -d
    ```
 
-3. **Shut Down**:
+3. **Start services with Docker Compose**:
+
    ```bash
-   docker-compose down
+   docker-compose build
+   docker-compose up -d
    ```
 
-4. **Testing**:
-  - Use tools like Postman to interact with the services via their RESTful APIs.
+4. **Access RabbitMQ management console**:
 
-## RabbitMQ
+  - **URL**: `http://localhost:15672/#/queues`
+  - **Username**: `guest`
+  - **Password**: `guest`
 
-RabbitMQ is used as the message broker in the system, facilitating communication between the microservices. You can access the RabbitMQ management console at:
+5. **Access Spring Cloud Eureka** (Service Discovery Dashboard):
 
-- **URL**: `http://localhost:15672/#/queues`
-- **Username**: `guest`
-- **Password**: `guest`
+  - **URL**: `http://localhost:8761`
 
-This is configured for local development. Ensure that RabbitMQ is up and running using Docker, and the necessary queues are created for communication between the microservices.
+### Shutdown
 
+To stop and remove containers, networks, and volumes:
+
+```bash
+docker-compose down
+```
+
+### Health Monitoring and Documentation
+
+Each microservice includes health endpoints and Swagger UI for documentation:
+
+- Health check endpoints: `/actuator/health`
+- Swagger documentation: `/swagger-ui/index.html`
+
+## Testing
+
+To test the system, tools such as **Postman** can be used to send HTTP requests to the exposed RESTful APIs of each microservice.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License**.
 
-## Software Components (Design Patterns and Components):
+## Software Components and Design Patterns
 
-The system follows several design patterns, utilizing well-known components:
+The system implements various industry-standard components and design patterns, including:
 
-1. **Service Discovery**: Netflix Eureka and Spring Cloud LoadBalancer.
-2. **Edge Server**: Spring Cloud Gateway and Spring Security OAuth.
-3. **Centralized Configuration**: Spring Cloud Configuration Server.
-4. **Circuit Breaker**: Resilience4j.
-5. **Distributed Tracing**: Micrometer Tracing and Zipkin.
+1. **Service Discovery**: Spring Cloud Eureka for service registry and discovery.
+2. **Edge Server**: Spring Cloud Gateway for routing and Spring Security OAuth for securing API endpoints.
+3. **Centralized Configuration**: Spring Cloud Config Server for managing external configuration in a distributed system.
+4. **Circuit Breaker**: Resilience4j for fault tolerance and service resiliency.
+5. **Distributed Tracing**: Micrometer Tracing and Zipkin for tracing requests across microservices.

@@ -51,10 +51,10 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   private final WebClient webClient;
   private final ObjectMapper mapper;
 
-  private final String PRODUCT_SERVICE_URL;
-  private final String INVENTORY_SERVICE_URL;
-  private final String ORDER_SERVICE_URL;
-  private final String SHIPPING_SERVICE_URL;
+  private static final String PRODUCT_SERVICE_URL = "http://product";
+  private static final String INVENTORY_SERVICE_URL = "http://inventory";
+  private static final String ORDER_SERVICE_URL = "http://order";
+  private static final String SHIPPING_SERVICE_URL = "http://shipping";
 
   private final StreamBridge streamBridge;
   private final Scheduler publishEventScheduler;
@@ -64,27 +64,11 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
     @Qualifier("publishEventScheduler") Scheduler publishEventScheduler,
     StreamBridge streamBridge,
     WebClient.Builder webClientBuilder,
-    ObjectMapper mapper,
-
-    @Value("${app.product-service.host}") String productServiceHost,
-    @Value("${app.product-service.port}") int  productServicePort,
-
-    @Value("${app.inventory-service.host}") String inventoryServiceHost,
-    @Value("${app.inventory-service.port}") int  inventoryServicePort,
-
-    @Value("${app.order-service.host}") String orderServiceHost,
-    @Value("${app.order-service.port}") int  orderServicePort,
-
-    @Value("${app.shipping-service.host}") String shippingServiceHost,
-    @Value("${app.shipping-service.port}") int  shippingServicePort) {
+    ObjectMapper mapper) {
     this.publishEventScheduler = publishEventScheduler;
     this.streamBridge = streamBridge;
     this.webClient = webClientBuilder.build();
     this.mapper = mapper;
-    PRODUCT_SERVICE_URL = "http://" + productServiceHost + ":" + productServicePort;
-    INVENTORY_SERVICE_URL = "http://" + inventoryServiceHost + ":" + inventoryServicePort;
-    ORDER_SERVICE_URL = "http://" + orderServiceHost + ":" + orderServicePort;
-    SHIPPING_SERVICE_URL = "http://" + shippingServiceHost + ":" + shippingServicePort;
   }
 
   private <T> Flux<T> getFlux(String url, Class<T> responseType) {
