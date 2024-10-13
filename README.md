@@ -5,6 +5,18 @@ system comprises five microservices, including one composite service, and employ
 for deployment and orchestration. This work represents the final project for the Distributed Information Systems course
 within the Master's program at the Faculty of Technical Sciences, University of Novi Sad.
 
+## Table of Contents
+
+- [Microservices Overview](#microservices-overview)
+  - [Gateway and Service Discovery](#gateway-and-service-discovery)
+- [Architecture Diagrams](#architecture-diagrams)
+- [Deployment](#deployment)
+- [Getting Started](#getting-started)
+- [Health Monitoring and Documentation](#health-monitoring-and-documentation)
+- [Testing](#testing)
+- [License](#license)
+- [Software Components and Design Patterns](#software-components-and-design-patterns)
+
 ## Microservices Overview
 
 ### 1. Product Service
@@ -114,6 +126,14 @@ within the Master's program at the Faculty of Technical Sciences, University of 
   - **Swagger UI**: `/swagger-ui/index.html`
 - **Database**: None (Acts as an orchestrator)
 
+## Gateway and Service Discovery
+
+The system includes a **Gateway Server** to facilitate routing and centralized access to the microservices:
+
+- **Gateway Endpoints**:
+  - `http://localhost:8080/openapi/webjars/swagger-ui/index.html`: Access **Swagger** for the Order Composite Service.
+  - `http://localhost:8080/eureka/web`: Access **Eureka** Service Discovery Dashboard.
+
 ## Architecture Diagrams
 
 - **Use Case Diagram**: Shows user interactions with the system.
@@ -196,22 +216,11 @@ the focus is on business logic and microservices interaction.
    ./gradlew build && docker-compose build && docker-compose up -d
    ```
 
-3. **Start services with Docker Compose**:
-
-   ```bash
-   docker-compose build
-   docker-compose up -d
-   ```
-
-4. **Access RabbitMQ management console**:
+3. **Access point RabbitMQ management console**:
 
   - **URL**: `http://localhost:15672/#/queues`
   - **Username**: `guest`
   - **Password**: `guest`
-
-5. **Access Spring Cloud Eureka** (Service Discovery Dashboard):
-
-  - **URL**: `http://localhost:8761`
 
 ### Shutdown
 
@@ -238,10 +247,10 @@ This project is licensed under the **MIT License**.
 
 ## Software Components and Design Patterns
 
-The system implements various industry-standard components and design patterns, including:
+This system leverages several software design principles and architectural patterns to ensure scalability, fault-tolerance, and maintainability:
 
-1. **Service Discovery**: Spring Cloud Eureka for service registry and discovery.
-2. **Edge Server**: Spring Cloud Gateway for routing and Spring Security OAuth for securing API endpoints.
-3. **Centralized Configuration**: Spring Cloud Config Server for managing external configuration in a distributed system.
-4. **Circuit Breaker**: Resilience4j for fault tolerance and service resiliency.
-5. **Distributed Tracing**: Micrometer Tracing and Zipkin for tracing requests across microservices.
+1. **Service Discovery**: Spring Cloud Eureka is used for service registry and discovery, enabling services to find each other dynamically.
+2. **API Gateway**: Spring Cloud Gateway handles routing, authentication, and API rate-limiting for edge service protection.
+3. **Centralized Configuration**: Spring Cloud Config Server allows centralized management of external configuration properties for microservices.
+4. **Resilience**: Resilience4j provides circuit-breaking, retry mechanisms, and bulkhead patterns for enhanced fault tolerance.
+5. **Distributed Tracing**: Micrometer Tracing with Zipkin for capturing and visualizing distributed traces across microservices, helping with debugging and performance monitoring.
