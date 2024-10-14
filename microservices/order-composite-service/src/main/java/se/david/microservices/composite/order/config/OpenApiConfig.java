@@ -1,4 +1,4 @@
-package se.david.microservices.composite.order;
+package se.david.microservices.composite.order.config;
 
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.OAuthFlow;

@@ -242,10 +242,6 @@ Each microservice includes health endpoints and Swagger UI for documentation:
 To test the system, tools such as **Postman** can be used to send HTTP requests to the exposed RESTful APIs of each
 microservice.
 
-## License
-
-This project is licensed under the **MIT License**.
-
 ## Software Components and Design Patterns
 
 This system leverages several software design principles and architectural patterns to ensure scalability,
