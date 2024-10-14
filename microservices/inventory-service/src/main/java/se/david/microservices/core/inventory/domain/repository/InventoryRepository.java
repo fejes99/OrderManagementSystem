@@ -1,6 +1,5 @@
 package se.david.microservices.core.inventory.domain.repository;
 
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;

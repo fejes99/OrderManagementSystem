@@ -14,8 +14,6 @@ import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
 import se.david.api.core.order.dto.OrderUpdateDto;
 
-import java.util.List;
-
 @Tag(name = "Order Service", description = "REST API for managing orders.")
 public interface OrderService {
 

@@ -1,4 +1,4 @@
-package se.david.springcloud.gateway;
+package se.david.springcloud.gateway.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +37,7 @@ public class HealthCheckConfiguration {
     registry.put("order", () -> getHealth("http://order"));
     registry.put("shipping", () -> getHealth("http://shipping"));
     registry.put("order-composite", () -> getHealth("http://order-composite"));
+    registry.put("auth-server", () -> getHealth("http://auth-server"));
 
     return CompositeReactiveHealthContributor.fromMap(registry);
   }

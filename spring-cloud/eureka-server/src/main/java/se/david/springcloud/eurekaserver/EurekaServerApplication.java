@@ -15,4 +15,15 @@ public class EurekaServerApplication {
   public static void main(String[] args) {
     SpringApplication.run(EurekaServerApplication.class, args);
   }
+
+  @RestController
+  static class CustomErrorController implements ErrorController {
+
+    private static final String ERROR_MAPPING = "/error";
+
+    @RequestMapping(ERROR_MAPPING)
+    public ResponseEntity<Void> error() {
+      return ResponseEntity.notFound().build();
+    }
+  }
 }

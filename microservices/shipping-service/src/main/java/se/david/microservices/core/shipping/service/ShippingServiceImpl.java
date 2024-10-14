@@ -19,7 +19,6 @@ import se.david.util.http.ServiceUtil;
 
 import java.util.List;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 @RestController
 public class ShippingServiceImpl implements ShippingService {
@@ -65,7 +64,7 @@ public class ShippingServiceImpl implements ShippingService {
     validateOrderId(orderId);
 
     return findShippingByOrderId(orderId)
-      .map(mapper::entityToDto)
+      .map(this::mapToShippingDtoWithServiceAddress)
       .doOnError(ex -> LOG.error("Error fetching shipping for orderId: {}", orderId, ex))
       .log(LOG.getName(), Level.FINE);
   }
@@ -77,7 +76,7 @@ public class ShippingServiceImpl implements ShippingService {
   }
 
   private void validateOrderId(int orderId) {
-    if (orderId < 1) {
+    if(orderId < 1) {
       throw new InvalidInputException("Invalid orderId: " + orderId);
     }
   }
@@ -89,7 +88,7 @@ public class ShippingServiceImpl implements ShippingService {
     Shipping shipping = mapper.createDtoToEntity(shippingCreateDto);
 
     return repository.save(shipping)
-      .map(mapper::entityToDto)
+      .map(this::mapToShippingDtoWithServiceAddress)
       .onErrorMap(DuplicateKeyException.class, ex ->
         new InvalidInputException("Duplicate key for orderId: " + shippingCreateDto.orderId()))
       .doOnSuccess(savedShipping -> LOG.debug("Successfully created shipping for orderId: {}", savedShipping.orderId()))
@@ -107,7 +106,7 @@ public class ShippingServiceImpl implements ShippingService {
         shipping.setStatus(status);
         return repository.save(shipping);
       })
-      .map(mapper::entityToDto)
+      .map(this::mapToShippingDtoWithServiceAddress)
       .onErrorMap(IllegalArgumentException.class, ex ->
         new InvalidInputException("Invalid orderId: " + orderId))
       .doOnSuccess(updatedShipping -> LOG.debug("Successfully updated shipping status for orderId: {}", updatedShipping.orderId()))

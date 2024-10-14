@@ -89,7 +89,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   private void validateProductId(int productId) {
-    if (productId < 1) {
+    if(productId < 1) {
       throw new InvalidInputException("Invalid productId: " + productId);
     }
   }

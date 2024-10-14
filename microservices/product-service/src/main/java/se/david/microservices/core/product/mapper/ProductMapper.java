@@ -10,6 +10,8 @@ import se.david.microservices.core.product.domain.entity.Product;
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
   ProductDto entityToDto(Product product);
+
   Product createDtoToEntity(ProductCreateDto productCreateDto);
+
   void updateEntityWithDto(@MappingTarget Product product, ProductUpdateDto productUpdateDto);
 }

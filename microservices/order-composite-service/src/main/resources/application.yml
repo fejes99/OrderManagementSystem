@@ -1,0 +1,87 @@
+# Springdoc OpenAPI Configuration
+springdoc:
+  swagger-ui.path: /openapi/swagger-ui.html
+  api-docs.path: /openapi/v3/api-docs
+  packagesToScan: se.david.microservices.composite.order
+  pathsToMatch: /**
+  cache.disabled: true
+
+  swagger-ui:
+    oauth2-redirect-url: /swagger-ui/oauth2-redirect.html
+    oauth:
+      clientId: writer
+      clientSecret: secret-writer
+      useBasicAuthenticationWithAccessCodeGrant: true
+  oAuthFlow:
+    authorizationUrl: https://localhost:8443/oauth2/authorize
+    tokenUrl: https://localhost:8443/oauth2/token
+
+# API Information
+api:
+  common:
+    description: Order Management System
+    title: Order Management API
+    version: 1.0.0
+
+# Application Settings
+app:
+  eureka-username: u
+  eureka-password: p
+  eureka-server: localhost
+  auth-server: localhost
+
+# Eureka Client Settings
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
+
+# Server Settings
+server.port: 7000
+server.error.include-message: always
+server.forward-headers-strategy: framework
+
+# Spring Cloud Stream and RabbitMQ Configuration
+spring.application.name: order-composite
+spring.cloud.stream:
+  defaultBinder: rabbit
+  default.contentType: application/json
+  bindings:
+    inventories-out-0:
+      destination: inventories
+      producer:
+        required-groups: auditGroup
+    orders-out-0:
+      destination: orders
+      producer:
+        required-groups: auditGroup
+    shipments-out-0:
+      destination: shipments
+      producer:
+        required-groups: auditGroup
+
+spring.rabbitmq:
+  host: 127.0.0.1
+  port: 5672
+  username: guest
+  password: guest
+
+# OAuth2 and JWT Configuration
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://${app.auth-server}:9999
+#spring.security.oauth2.resourceserver.jwt.issuer-uri: https://dev-oj1m6arhfz4cx65z.us.auth0.com/
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    se.magnus: DEBUG
+    org.springframework.web.server.adapter.HttpWebHandlerAdapter: TRACE
+
+# Management Endpoints Configuration
+management.endpoint.health.show-details: "ALWAYS"
+management.endpoints.web.exposure.include: "*"

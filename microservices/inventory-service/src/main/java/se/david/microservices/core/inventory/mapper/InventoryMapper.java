@@ -9,6 +9,7 @@ import se.david.microservices.core.inventory.domain.entity.Inventory;
 @Mapper(componentModel = "spring")
 public interface InventoryMapper {
   InventoryDto entityToDto(Inventory inventory);
+
   Inventory createDtoToEntity(InventoryCreateDto inventoryCreateDto);
 
   InventoryStockAdjustmentRequestDto entityToStockAdjustmentRequestDto(Inventory inventory);

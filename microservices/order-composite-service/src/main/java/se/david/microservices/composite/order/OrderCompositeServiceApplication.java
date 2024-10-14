@@ -19,8 +19,6 @@ import reactor.core.scheduler.Schedulers;
 @ComponentScan("se.david")
 public class OrderCompositeServiceApplication {
   private static final Logger LOG = LoggerFactory.getLogger(OrderCompositeServiceApplication.class);
-  private final Integer threadPoolSize;
-  private final Integer taskQueueSize;
 
   @Value("${api.common.version}")
   private String apiVersion;
@@ -39,6 +37,9 @@ public class OrderCompositeServiceApplication {
         .description(apiDescription)
         .version(apiVersion));
   }
+
+  private final Integer threadPoolSize;
+  private final Integer taskQueueSize;
 
   @Autowired
   public OrderCompositeServiceApplication(

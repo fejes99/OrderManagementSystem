@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.http.HttpStatus;
@@ -136,8 +135,8 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
     String url = SHIPPING_SERVICE_URL + "/shipments";
     StringBuilder urlBuilder = new StringBuilder(url + "/byOrdersIds?");
 
-    for (Integer orderId : orderIds) {
-      if (urlBuilder.length() > url.length() + "/byOrdersIds?".length()) {
+    for(Integer orderId : orderIds) {
+      if(urlBuilder.length() > url.length() + "/byOrdersIds?".length()) {
         urlBuilder.append("&");
       }
       urlBuilder.append("orderIds=").append(orderId);
@@ -157,7 +156,7 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public Mono<ShippingDto> createShippingOrder(ShippingCreateDto shippingCreateDto) {
-    String url = PRODUCT_SERVICE_URL + "/orders/" + shippingCreateDto.orderId();
+    String url = SHIPPING_SERVICE_URL + "/orders/" + shippingCreateDto.orderId();
     return sendEventAndFetch("shipments-out-0", Event.Type.CREATE, shippingCreateDto.orderId(), shippingCreateDto, url, ShippingDto.class);
   }
 
@@ -215,7 +214,7 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public Mono<OrderDto> getOrder(int orderId) {
-    return getMono(PRODUCT_SERVICE_URL + "/orders/" + orderId, OrderDto.class);
+    return getMono(ORDER_SERVICE_URL + "/orders/" + orderId, OrderDto.class);
   }
 
   @Override
@@ -232,13 +231,13 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public Mono<OrderDto> updateOrder(int orderId, OrderUpdateDto orderUpdateDto) {
-    return sendEventAndFetch("orders-out-0", Event.Type.UPDATE, orderId, orderUpdateDto, PRODUCT_SERVICE_URL + "/orders/" + orderId, OrderDto.class);
+    return sendEventAndFetch("orders-out-0", Event.Type.UPDATE, orderId, orderUpdateDto, ORDER_SERVICE_URL + "/orders/" + orderId, OrderDto.class);
   }
 
   @Override
   public Mono<Void> deleteOrder(int orderId) {
     return webClient.delete()
-      .uri(PRODUCT_SERVICE_URL + "/orders/" + orderId)
+      .uri(ORDER_SERVICE_URL + "/orders/" + orderId)
       .retrieve()
       .bodyToMono(Void.class)
       .doOnSuccess(unused -> LOG.debug("deleteOrder: Successfully deleted order with ID: {}", orderId))
@@ -283,10 +282,14 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
     return sendEvent("inventories-out-0", Event.Type.REDUCE_STOCKS, null, inventoryReduceDtos);
   }
 
-  public Mono<Health> getInventoryHealth() { return getHealth(INVENTORY_SERVICE_URL); }
+  public Mono<Health> getInventoryHealth() {
+    return getHealth(INVENTORY_SERVICE_URL);
+  }
+
   public Mono<Health> getOrderHealth() {
     return getHealth(ORDER_SERVICE_URL);
   }
+
   public Mono<Health> getShippingHealth() {
     return getHealth(SHIPPING_SERVICE_URL);
   }
@@ -317,7 +320,7 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
       return ex;
     }
 
-    switch (HttpStatus.resolve(wcre.getStatusCode().value())) {
+    switch(HttpStatus.resolve(wcre.getStatusCode().value())) {
 
       case NOT_FOUND:
         return new NotFoundException(getErrorMessage(wcre));
@@ -335,7 +338,7 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
   private String getErrorMessage(WebClientResponseException ex) {
     try {
       return mapper.readValue(ex.getResponseBodyAsString(), HttpErrorInfo.class).getMessage();
-    } catch (IOException ioex) {
+    } catch(IOException ioex) {
       return ex.getMessage();
     }
   }

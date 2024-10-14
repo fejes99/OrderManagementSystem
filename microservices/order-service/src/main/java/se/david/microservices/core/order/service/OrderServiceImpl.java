@@ -58,6 +58,7 @@ public class OrderServiceImpl implements OrderService {
       .doOnError(ex -> LOG.error("Error fetching orders", ex))
       .log(LOG.getName(), Level.FINE);
   }
+
   private List<Order> internalGetOrders() {
     return (List<Order>) repository.findAll();
   }
@@ -91,7 +92,7 @@ public class OrderServiceImpl implements OrderService {
   }
 
   private void validateUserId(int userId) {
-    if (userId < 1) {
+    if(userId < 1) {
       throw new InvalidInputException("Invalid userId: " + userId);
     }
   }
@@ -104,7 +105,7 @@ public class OrderServiceImpl implements OrderService {
 
     return Mono.fromCallable(() -> findOrderById(orderId))
       .subscribeOn(jdbcScheduler)
-      .map(mapper::entityToDto)
+      .map(this::mapToOrderDtoWithServiceAddress)
       .doOnError(ex -> LOG.error("Error fetching order for orderId: {}", orderId, ex))
       .log(LOG.getName(), Level.FINE);
   }
@@ -115,7 +116,7 @@ public class OrderServiceImpl implements OrderService {
   }
 
   private void validateOrderId(int orderId) {
-    if (orderId < 1) {
+    if(orderId < 1) {
       throw new InvalidInputException("Invalid orderId: " + orderId);
     }
   }
@@ -129,7 +130,7 @@ public class OrderServiceImpl implements OrderService {
 
     return Mono.fromCallable(() -> internalCreateOrder(orderCreateDto))
       .subscribeOn(jdbcScheduler)
-      .map(mapper::entityToDto)
+      .map(this::mapToOrderDtoWithServiceAddress)
       .onErrorMap(DuplicateKeyException.class, ex ->
         new InvalidInputException("Duplicate order for userId: " + orderCreateDto.userId()))
       .doOnSuccess(savedOrder -> LOG.debug("Successfully created order with id: {}", savedOrder.id()))
@@ -159,7 +160,7 @@ public class OrderServiceImpl implements OrderService {
 
     return Mono.fromCallable(() -> internalUpdateOrder(orderId, orderUpdateDto))
       .subscribeOn(jdbcScheduler)
-      .map(mapper::entityToDto)
+      .map(this::mapToOrderDtoWithServiceAddress)
       .onErrorMap(IllegalArgumentException.class, ex ->
         new InvalidInputException("Invalid orderId: " + orderId))
       .doOnSuccess(updatedOrder -> LOG.debug("Successfully updated order with id: {}", updatedOrder.id()))

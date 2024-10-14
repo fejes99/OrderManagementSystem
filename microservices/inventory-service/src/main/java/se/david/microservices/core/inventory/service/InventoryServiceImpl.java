@@ -54,12 +54,12 @@ public class InventoryServiceImpl implements InventoryService {
     LOG.debug("getInventoryStock: Search stock for productId: {}", productId);
     validateProductId(productId);
     return findInventoryByProductId(productId)
-      .map(mapper::entityToDto)
+      .map(this::mapToInventoryDtoWithServiceAddress)
       .log(LOG.getName(), Level.FINE);
   }
 
   private void validateProductId(int productId) {
-    if (productId < 1) {
+    if(productId < 1) {
       throw new InvalidInputException("Invalid productId: " + productId);
     }
   }
@@ -80,7 +80,9 @@ public class InventoryServiceImpl implements InventoryService {
       .flatMap(existing -> Mono.error(new InvalidInputException("Inventory item already exists for productId: " + inventoryCreateDto.productId())))
       .switchIfEmpty(Mono.defer(() -> {
         Inventory inventory = mapper.createDtoToEntity(inventoryCreateDto);
-        return repository.save(inventory).map(mapper::entityToDto);
+        return repository
+          .save(inventory)
+          .map(this::mapToInventoryDtoWithServiceAddress);
       }))
       .cast(InventoryDto.class)
       .log(LOG.getName(), Level.FINE);
@@ -93,7 +95,7 @@ public class InventoryServiceImpl implements InventoryService {
     LOG.debug("deleteInventoryStock: Deleting inventory for productId: {}", productId);
     validateProductId(productId);
     return findInventoryByProductId(productId)
-      .flatMap(inventory -> repository.delete(inventory).then(Mono.<Void>empty()))
+      .flatMap(inventory -> repository.delete(inventory).then(Mono.<Void> empty()))
       .log(LOG.getName(), Level.FINE);
   }
 
@@ -106,7 +108,7 @@ public class InventoryServiceImpl implements InventoryService {
       .flatMap(inventory -> {
         adjustStock(inventory, inventoryIncreaseDto.quantity());
         return repository.save(inventory)
-          .map(mapper::entityToDto);
+          .map(this::mapToInventoryDtoWithServiceAddress);
       })
       .onErrorMap(DuplicateKeyException.class, ex ->
         new InvalidInputException("Duplicate key for productId: " + inventoryIncreaseDto.productId()))
@@ -114,7 +116,7 @@ public class InventoryServiceImpl implements InventoryService {
   }
 
   private void validateStockAdjustmentRequest(InventoryStockAdjustmentRequestDto request) {
-    if (request.productId() < 1 || request.quantity() < 1) {
+    if(request.productId() < 1 || request.quantity() < 1) {
       throw new InvalidInputException("Invalid input: productId = " + request.productId() + ", quantity = " + request.quantity());
     }
   }
@@ -149,7 +151,7 @@ public class InventoryServiceImpl implements InventoryService {
   }
 
   private void ensureSufficientStock(Inventory inventory, int quantityToReduce) {
-    if (inventory.getQuantity() < quantityToReduce) {
+    if(inventory.getQuantity() < quantityToReduce) {
       throw new InventoryOutOfStockException("Insufficient stock for productId: " + inventory.getProductId());
     }
   }

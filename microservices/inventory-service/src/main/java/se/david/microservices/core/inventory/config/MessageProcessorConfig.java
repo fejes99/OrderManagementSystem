@@ -52,7 +52,7 @@ public class MessageProcessorConfig {
           inventoryService.reduceStocks(adjustmentRequests)
             .doOnSuccess(unused -> LOG.info("Successfully reduced stock for provided products."))
             .doOnError(error -> {
-              if (error instanceof InventoryOutOfStockException) {
+              if(error instanceof InventoryOutOfStockException) {
                 LOG.warn("Stock reduction failed due to insufficient stock: {}", error.getMessage());
               } else {
                 LOG.error("Failed to reduce stock: {}", error.getMessage());
