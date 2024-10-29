@@ -98,10 +98,7 @@ public interface OrderCompositeService {
       @ApiResponse(
         responseCode = "201",
         description = "Successfully created the composite order",
-        content = @Content(
-          mediaType = "application/json",
-          schema = @Schema(implementation = OrderAggregateDto.class)
-        )
+        content = @Content(schema = @Schema(hidden = true))
       ),
       @ApiResponse(
         responseCode = "400",
@@ -109,5 +106,6 @@ public interface OrderCompositeService {
       )
     }
   )
-  Mono<OrderAggregateDto> createCompositeOrder(@RequestBody OrderAggregateCreateDto orderAggregateCreateDto) throws Exception;
+  Mono<Void> createCompositeOrder(@RequestBody OrderAggregateCreateDto orderAggregateCreateDto) throws Exception;
+
 }

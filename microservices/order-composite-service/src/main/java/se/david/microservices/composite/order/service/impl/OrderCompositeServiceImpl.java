@@ -111,32 +111,24 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
   }
 
   @Override
-  public Mono<OrderAggregateDto> createCompositeOrder(OrderAggregateCreateDto orderAggregateCreateDto) {
+  public Mono<Void> createCompositeOrder(OrderAggregateCreateDto orderAggregateCreateDto) {
     LOG.debug("createCompositeOrder: Starting to create composite order for userId: {}", orderAggregateCreateDto.userId());
 
     return getLogAuthorizationInfoMono()
       .then(getProductsForOrderItems(orderAggregateCreateDto.orderItemCreateDtos()))
       .flatMap(products -> createOrderAndShipping(orderAggregateCreateDto, products))
-      .doOnSuccess(orderAggregateDto -> LOG.info("Successfully created composite order for userId: {}, orderId: {}",
-        orderAggregateCreateDto.userId(), orderAggregateDto.orderId()))
-      .doOnError(ex -> LOG.error("Failed to create composite order for userId: {}, error: {}",
-        orderAggregateCreateDto.userId(), ex.toString()))
-      .onErrorResume(this::handleOrderCreationError);
+      .doOnSuccess(orderAggregateDto -> LOG.info("Successfully created composite order for userId: {}", orderAggregateCreateDto.userId()))
+      .doOnError(ex -> LOG.error("Failed to create composite order for userId: {}, error: {}", orderAggregateCreateDto.userId(), ex.toString()))
+      .onErrorResume(this::handleOrderCreationError)
+      .then();
   }
 
-  private Mono<OrderAggregateDto> createOrderAndShipping(OrderAggregateCreateDto orderCreateDto, List<ProductDto> products) {
+  private Mono<Void> createOrderAndShipping(OrderAggregateCreateDto orderCreateDto, List<ProductDto> products) {
     return createOrder(orderCreateDto)
-      .flatMap(order -> createShipping(order, orderCreateDto)
-        .map(shipping -> buildOrderAggregateDto(order, shipping, products, orderCreateDto))
-      )
-      .doOnError(ex -> LOG.error("Error creating order or shipping for userId: {}, error: {}",
-        orderCreateDto.userId(), ex.toString()));
-  }
-
-  private OrderAggregateDto buildOrderAggregateDto(OrderDto order, ShippingDto shipping, List<ProductDto> products, OrderAggregateCreateDto orderCreateDto) {
-    LOG.debug("Building OrderAggregateDto for orderId: {}, userId: {}", order.id(), orderCreateDto.userId());
-
-    return createOrderAggregateDto(order, shipping, products, order.orderItems(), serviceUtil.getServiceAddress());
+      .flatMap(order -> createShipping(order, orderCreateDto))
+      .doOnSuccess(aVoid -> LOG.debug("Successfully created order and shipping for userId: {}", orderCreateDto.userId()))
+      .doOnError(ex -> LOG.error("Error creating order or shipping for userId: {}, error: {}", orderCreateDto.userId(), ex.toString()))
+      .then();
   }
 
   private Mono<OrderDto> createOrder(OrderAggregateCreateDto orderAggregateCreateDto) {
@@ -153,7 +145,7 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
       .doOnError(e -> LOG.error("Error creating shipping for orderId {}", order.id(), e));
   }
 
-  private Mono<OrderAggregateDto> handleOrderCreationError(Throwable e) {
+  private Mono<Void> handleOrderCreationError(Throwable e) {
     LOG.error("Error creating composite order", e);
     return Mono.empty();
   }
