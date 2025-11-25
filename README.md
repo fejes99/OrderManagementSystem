@@ -216,8 +216,9 @@ the focus is on business logic and microservices interaction.
    ./gradlew build && docker-compose build && docker-compose up -d
    ```
 
-3. **Access point RabbitMQ management console**:
+3. **Entry Point**: Open the Gateway Swagger UI at `https://localhost:8443/openapi/webjars/swagger-ui/index.html` to explore the APIs.
 
+4. **Access point RabbitMQ management console**:
 - **URL**: `http://localhost:15672/#/queues`
 - **Username**: `guest`
 - **Password**: `guest`
@@ -257,5 +258,3 @@ fault-tolerance, and maintainability:
    tolerance.
 5. **Distributed Tracing**: Micrometer Tracing with Zipkin for capturing and visualizing distributed traces across
    microservices, helping with debugging and performance monitoring.
-
-https://localhost:8443/oauth2/authorize?response_type=code&client_id=reader&redirect_uri=https://my.redirect.uri&scope=order:read&state=35725.

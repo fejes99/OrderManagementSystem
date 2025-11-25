@@ -96,7 +96,7 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
       .subscribeOn(publishEventScheduler);
   }
 
-  private <K, V> Mono<Void> sendEvent(String bindingName, Event.Type eventType, K key, V payload) {
+  <K, V> Mono<Void> sendEvent(String bindingName, Event.Type eventType, K key, V payload) {
     Event<K, V> event = new Event<>(eventType, key, payload);
     return Mono.fromRunnable(() -> sendMessage(bindingName, event))
       .doOnError(ex -> LOG.error("Failed to send {} event for key: {}", eventType, key, ex)).then();

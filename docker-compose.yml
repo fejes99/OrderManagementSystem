@@ -9,6 +9,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8081:8080"
 
@@ -112,6 +114,9 @@ services:
     mem_limit: 512m
     ports:
       - "8443:8443"
+    depends_on:
+      auth-server:
+        condition: service_healthy
 
   auth-server:
     environment:

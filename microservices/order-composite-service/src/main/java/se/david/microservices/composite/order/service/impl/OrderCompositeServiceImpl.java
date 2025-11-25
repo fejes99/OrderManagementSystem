@@ -116,14 +116,14 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
 
     return getLogAuthorizationInfoMono()
       .then(getProductsForOrderItems(orderAggregateCreateDto.orderItemCreateDtos()))
-      .flatMap(products -> createOrderAndShipping(orderAggregateCreateDto, products))
+      .flatMap(products -> createOrderAndShipping(orderAggregateCreateDto))
       .doOnSuccess(orderAggregateDto -> LOG.info("Successfully created composite order for userId: {}", orderAggregateCreateDto.userId()))
       .doOnError(ex -> LOG.error("Failed to create composite order for userId: {}, error: {}", orderAggregateCreateDto.userId(), ex.toString()))
       .onErrorResume(this::handleOrderCreationError)
       .then();
   }
 
-  private Mono<Void> createOrderAndShipping(OrderAggregateCreateDto orderCreateDto, List<ProductDto> products) {
+  private Mono<Void> createOrderAndShipping(OrderAggregateCreateDto orderCreateDto) {
     return createOrder(orderCreateDto)
       .flatMap(order -> createShipping(order, orderCreateDto))
       .doOnSuccess(aVoid -> LOG.debug("Successfully created order and shipping for userId: {}", orderCreateDto.userId()))

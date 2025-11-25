@@ -5,6 +5,7 @@ RUN java -Djarmode=layertools -jar app.jar extract
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR application
+RUN apk add --no-cache curl
 COPY --from=builder extracted/dependencies/ ./
 COPY --from=builder extracted/spring-boot-loader/ ./
 COPY --from=builder extracted/snapshot-dependencies/ ./
