@@ -116,24 +116,28 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
 
     return getLogAuthorizationInfoMono()
       .then(getProductsForOrderItems(orderAggregateCreateDto.orderItemCreateDtos()))
-      .flatMap(products -> createOrderAndShipping(orderAggregateCreateDto))
+      .flatMap(products -> createOrderAndShipping(orderAggregateCreateDto, products))
       .doOnSuccess(orderAggregateDto -> LOG.info("Successfully created composite order for userId: {}", orderAggregateCreateDto.userId()))
       .doOnError(ex -> LOG.error("Failed to create composite order for userId: {}, error: {}", orderAggregateCreateDto.userId(), ex.toString()))
       .onErrorResume(this::handleOrderCreationError)
       .then();
   }
 
-  private Mono<Void> createOrderAndShipping(OrderAggregateCreateDto orderCreateDto) {
-    return createOrder(orderCreateDto)
+  private Mono<Void> createOrderAndShipping(OrderAggregateCreateDto orderCreateDto, List<ProductDto> products) {
+    return createOrder(orderCreateDto, products)
       .flatMap(order -> createShipping(order, orderCreateDto))
       .doOnSuccess(aVoid -> LOG.debug("Successfully created order and shipping for userId: {}", orderCreateDto.userId()))
       .doOnError(ex -> LOG.error("Error creating order or shipping for userId: {}, error: {}", orderCreateDto.userId(), ex.toString()))
       .then();
   }
 
-  private Mono<OrderDto> createOrder(OrderAggregateCreateDto orderAggregateCreateDto) {
+  private Mono<OrderDto> createOrder(OrderAggregateCreateDto orderAggregateCreateDto, List<ProductDto> products) {
     LOG.debug("createOrder: Creating order for userId {}", orderAggregateCreateDto.userId());
-    OrderCreateDto orderCreateDto = new OrderCreateDto(orderAggregateCreateDto.userId(), orderAggregateCreateDto.orderItemCreateDtos());
+    Map<Integer, ProductDto> productMap = createProductMap(products);
+    List<OrderItemCreateDto> pricedOrderItems = orderAggregateCreateDto.orderItemCreateDtos().stream()
+      .map(item -> new OrderItemCreateDto(item.productId(), item.quantity(), productMap.get(item.productId()).price()))
+      .collect(Collectors.toList());
+    OrderCreateDto orderCreateDto = new OrderCreateDto(orderAggregateCreateDto.userId(), pricedOrderItems);
     return integration.createOrder(orderCreateDto)
       .doOnError(e -> LOG.error("Error creating order for userId {}", orderAggregateCreateDto.userId(), e));
   }

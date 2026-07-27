@@ -147,6 +147,7 @@ public class OrderServiceImpl implements OrderService {
       .collect(Collectors.toList());
 
     order.setOrderItems(orderItems);
+    order.setTotalPrice(orderItems.stream().mapToInt(item -> item.getPrice() * item.getQuantity()).sum());
 
     return repository.save(order);
   }
