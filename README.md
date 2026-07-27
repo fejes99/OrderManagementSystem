@@ -210,15 +210,21 @@ the focus is on business logic and microservices interaction.
    git clone https://github.com/fejes99/OrderManagementSystem.git
    ```
 
-2. **Build and Run**:
+2. **Generate the gateway's dev TLS keystore** (self-signed, gitignored — not committed):
+
+   ```bash
+   ./generate-dev-keystore.sh
+   ```
+
+3. **Build and Run**:
 
    ```bash
    ./gradlew build && docker-compose build && docker-compose up -d
    ```
 
-3. **Entry Point**: Open the Gateway Swagger UI at `https://localhost:8443/openapi/webjars/swagger-ui/index.html` to explore the APIs.
+4. **Entry Point**: Open the Gateway Swagger UI at `https://localhost:8443/openapi/webjars/swagger-ui/index.html` to explore the APIs.
 
-4. **Access point RabbitMQ management console**:
+5. **Access point RabbitMQ management console**:
 - **URL**: `http://localhost:15672/#/queues`
 - **Username**: `guest`
 - **Password**: `guest`

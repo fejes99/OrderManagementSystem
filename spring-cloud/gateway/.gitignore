@@ -1,6 +1,9 @@
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
+
+# Dev-only TLS keystore, regenerate locally via generate-dev-keystore.sh (repo root)
+src/main/resources/keystore/*.p12
 !**/src/main/**/build/
 !**/src/test/**/build/
 
