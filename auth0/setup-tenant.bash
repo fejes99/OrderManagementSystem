@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# Copy env.bash.example to env.bash and fill in real values (env.bash is gitignored).
 source env.bash
 
 CLIENT_REDIRECT_URI=https://my.redirect.uri

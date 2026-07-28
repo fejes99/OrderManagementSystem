@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-#
-# Generates a self-signed, dev-only PKCS12 keystore for the gateway's TLS termination.
-# The keystore is gitignored (spring-cloud/gateway/.gitignore) since private keys should
-# never be committed, even self-signed local ones. Re-run this whenever you clone the repo
-# or need a fresh key.
-#
 set -e
 
 KEYSTORE_DIR="spring-cloud/gateway/src/main/resources/keystore"
