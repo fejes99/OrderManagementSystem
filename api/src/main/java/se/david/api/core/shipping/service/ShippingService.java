@@ -1,6 +1,7 @@
 package se.david.api.core.shipping.service;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -124,7 +125,7 @@ public interface ShippingService {
       )
     }
   )
-  Mono<ShippingDto> createShippingOrder(@RequestBody ShippingCreateDto shippingCreateDto);
+  Mono<ShippingDto> createShippingOrder(@Valid @RequestBody ShippingCreateDto shippingCreateDto);
 
   @PutMapping(
     value = "/shipments/order/{orderId}",

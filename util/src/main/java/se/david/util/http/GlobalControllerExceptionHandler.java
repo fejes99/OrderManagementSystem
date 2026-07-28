@@ -8,9 +8,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
 import se.david.api.exceptions.BadRequestException;
 import se.david.api.exceptions.InvalidInputException;
 import se.david.api.exceptions.NotFoundException;
+
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -42,11 +45,28 @@ public class GlobalControllerExceptionHandler {
     return createHttpErrorInfo(UNPROCESSABLE_ENTITY, request, ex);
   }
 
+  @ResponseStatus(UNPROCESSABLE_ENTITY)
+  @ExceptionHandler(WebExchangeBindException.class)
+  public @ResponseBody HttpErrorInfo handleValidationException(
+    ServerHttpRequest request, WebExchangeBindException ex) {
+
+    String message = ex.getBindingResult().getFieldErrors().stream()
+      .map(error -> error.getField() + ": " + error.getDefaultMessage())
+      .collect(Collectors.joining(", "));
+
+    return createHttpErrorInfo(UNPROCESSABLE_ENTITY, request, message);
+  }
+
   private HttpErrorInfo createHttpErrorInfo(
     HttpStatus httpStatus, ServerHttpRequest request, Exception ex) {
 
+    return createHttpErrorInfo(httpStatus, request, ex.getMessage());
+  }
+
+  private HttpErrorInfo createHttpErrorInfo(
+    HttpStatus httpStatus, ServerHttpRequest request, String message) {
+
     final String path = request.getPath().pathWithinApplication().value();
-    final String message = ex.getMessage();
 
     LOG.debug("Returning HTTP status: {} for path: {}, message: {}", httpStatus, path, message);
     return new HttpErrorInfo(httpStatus, path, message);

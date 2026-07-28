@@ -1,4 +1,9 @@
 package se.david.api.core.product.dto;
 
-public record ProductUpdateDto(String description, int price) {
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
+public record ProductUpdateDto(
+  @Size(max = 500) String description,
+  @Positive int price) {
 }

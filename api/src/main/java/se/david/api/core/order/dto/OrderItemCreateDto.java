@@ -1,4 +1,10 @@
 package se.david.api.core.order.dto;
 
-public record OrderItemCreateDto(int productId, int quantity, int price) {
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
+public record OrderItemCreateDto(
+  @Positive int productId,
+  @Positive int quantity,
+  @PositiveOrZero int price) {
 }

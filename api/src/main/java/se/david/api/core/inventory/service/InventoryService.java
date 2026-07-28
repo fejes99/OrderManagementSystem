@@ -1,6 +1,7 @@
 package se.david.api.core.inventory.service;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -95,7 +96,7 @@ public interface InventoryService {
       )
     }
   )
-  Mono<InventoryDto> createInventoryStock(@RequestBody InventoryCreateDto inventoryCreateDto);
+  Mono<InventoryDto> createInventoryStock(@Valid @RequestBody InventoryCreateDto inventoryCreateDto);
 
   @PutMapping(
     value = "/inventories/increaseStock",
@@ -123,7 +124,7 @@ public interface InventoryService {
       )
     }
   )
-  Mono<InventoryDto> increaseStock(@RequestBody InventoryStockAdjustmentRequestDto inventoryIncreaseDto);
+  Mono<InventoryDto> increaseStock(@Valid @RequestBody InventoryStockAdjustmentRequestDto inventoryIncreaseDto);
 
   @PutMapping(
     value = "/inventories/reduceStock",
@@ -147,7 +148,7 @@ public interface InventoryService {
       )
     }
   )
-  Mono<Void> reduceStocks(@RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos);
+  Mono<Void> reduceStocks(@Valid @RequestBody List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos);
 
   @DeleteMapping(
     value = "/inventories/{productId}",

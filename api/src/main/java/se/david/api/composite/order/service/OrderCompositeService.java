@@ -2,6 +2,7 @@ package se.david.api.composite.order.service;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -106,6 +107,6 @@ public interface OrderCompositeService {
       )
     }
   )
-  Mono<Void> createCompositeOrder(@RequestBody OrderAggregateCreateDto orderAggregateCreateDto) throws Exception;
+  Mono<Void> createCompositeOrder(@Valid @RequestBody OrderAggregateCreateDto orderAggregateCreateDto) throws Exception;
 
 }

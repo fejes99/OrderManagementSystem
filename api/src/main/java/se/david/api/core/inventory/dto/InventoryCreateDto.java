@@ -1,4 +1,10 @@
 package se.david.api.core.inventory.dto;
 
-public record InventoryCreateDto(int productId, Integer quantity) {
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
+public record InventoryCreateDto(
+  @Positive int productId,
+  @NotNull @PositiveOrZero Integer quantity) {
 }

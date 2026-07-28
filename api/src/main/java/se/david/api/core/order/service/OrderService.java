@@ -1,6 +1,7 @@
 package se.david.api.core.order.service;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -122,7 +123,7 @@ public interface OrderService {
       )
     }
   )
-  Mono<OrderDto> createOrder(@RequestBody OrderCreateDto orderCreateDto);
+  Mono<OrderDto> createOrder(@Valid @RequestBody OrderCreateDto orderCreateDto);
 
   @PutMapping(
     value = "/orders/{orderId}",
@@ -159,7 +160,7 @@ public interface OrderService {
       )
     }
   )
-  Mono<OrderDto> updateOrder(@PathVariable int orderId, @RequestBody OrderUpdateDto orderUpdateDto);
+  Mono<OrderDto> updateOrder(@PathVariable int orderId, @Valid @RequestBody OrderUpdateDto orderUpdateDto);
 
   @DeleteMapping(
     value = "/orders/{orderId}")

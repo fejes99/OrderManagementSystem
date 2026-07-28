@@ -102,8 +102,6 @@ public class InventoryServiceImpl implements InventoryService {
   @Override
   @Transactional
   public Mono<InventoryDto> increaseStock(InventoryStockAdjustmentRequestDto inventoryIncreaseDto) {
-    validateStockAdjustmentRequest(inventoryIncreaseDto);
-
     return findInventoryByProductId(inventoryIncreaseDto.productId())
       .flatMap(inventory -> {
         adjustStock(inventory, inventoryIncreaseDto.quantity());
@@ -113,12 +111,6 @@ public class InventoryServiceImpl implements InventoryService {
       .onErrorMap(DuplicateKeyException.class, ex ->
         new InvalidInputException("Duplicate key for productId: " + inventoryIncreaseDto.productId()))
       .log(LOG.getName(), Level.FINE);
-  }
-
-  private void validateStockAdjustmentRequest(InventoryStockAdjustmentRequestDto request) {
-    if(request.productId() < 1 || request.quantity() < 1) {
-      throw new InvalidInputException("Invalid input: productId = " + request.productId() + ", quantity = " + request.quantity());
-    }
   }
 
   private void adjustStock(Inventory inventory, int adjustmentQuantity) {
@@ -137,8 +129,6 @@ public class InventoryServiceImpl implements InventoryService {
   }
 
   private Mono<Void> processStockReduction(InventoryStockAdjustmentRequestDto reduceRequest) {
-    validateStockAdjustmentRequest(reduceRequest);
-
     return findInventoryByProductId(reduceRequest.productId())
       .flatMap(inventory -> {
         ensureSufficientStock(inventory, reduceRequest.quantity());

@@ -1,6 +1,7 @@
 package se.david.api.core.product.service;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -128,7 +129,7 @@ public interface ProductService {
       )
     }
   )
-  Mono<ProductDto> createProduct(@RequestBody ProductCreateDto productCreateDto);
+  Mono<ProductDto> createProduct(@Valid @RequestBody ProductCreateDto productCreateDto);
 
   @PutMapping(
     value = "/products/{productId}",
@@ -165,7 +166,7 @@ public interface ProductService {
       )
     }
   )
-  Mono<ProductDto> updateProduct(@PathVariable int productId, @RequestBody ProductUpdateDto productUpdateDto);
+  Mono<ProductDto> updateProduct(@PathVariable int productId, @Valid @RequestBody ProductUpdateDto productUpdateDto);
 
   @DeleteMapping(
     value = "/products/{productId}")
