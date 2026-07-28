@@ -5,5 +5,5 @@ import java.util.List;
 public record OrderAggregateCreateDto(
   int userId,
   String shippingAddress,
-  List<OrderItemCreateDto> orderItemCreateDtos) {
+  List<OrderItemRequestDto> orderItemCreateDtos) {
 }

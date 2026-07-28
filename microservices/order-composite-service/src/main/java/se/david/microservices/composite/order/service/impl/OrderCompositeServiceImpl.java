@@ -15,6 +15,7 @@ import se.david.api.composite.order.dto.*;
 import se.david.api.composite.order.service.OrderCompositeService;
 import se.david.api.core.order.dto.OrderCreateDto;
 import se.david.api.core.order.dto.OrderDto;
+import se.david.api.core.order.dto.OrderItemCreateDto;
 import se.david.api.core.order.dto.OrderItemDto;
 import se.david.api.core.product.dto.ProductDto;
 import se.david.api.core.shipping.dto.ShippingCreateDto;
@@ -154,9 +155,9 @@ public class OrderCompositeServiceImpl implements OrderCompositeService {
     return Mono.empty();
   }
 
-  private Mono<List<ProductDto>> getProductsForOrderItems(List<OrderItemCreateDto> orderItems) {
+  private Mono<List<ProductDto>> getProductsForOrderItems(List<OrderItemRequestDto> orderItems) {
     List<Integer> productIds = orderItems.stream()
-      .map(OrderItemCreateDto::productId)
+      .map(OrderItemRequestDto::productId)
       .distinct()
       .collect(Collectors.toList());
     LOG.debug("getProductsForOrderItems: Retrieving products for productIds: {}", productIds);
