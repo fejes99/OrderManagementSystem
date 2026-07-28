@@ -1,17 +1,23 @@
 plugins {
     id 'java'
-    id 'io.spring.dependency-management' version '1.1.5'
+    id 'io.spring.dependency-management' version '1.1.6'
 }
 
 group = 'se.david.api'
 version = '1.0.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 repositories {
     mavenCentral()
 }
 
 ext {
-    springBootVersion = '3.3.1'
+    springBootVersion = '3.3.4'
 }
 
 dependencyManagement {
