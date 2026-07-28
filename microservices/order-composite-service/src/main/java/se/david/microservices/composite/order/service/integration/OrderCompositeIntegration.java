@@ -102,6 +102,16 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
       .doOnError(ex -> LOG.error("Failed to send {} event for key: {}", eventType, key, ex)).then();
   }
 
+  // Deliberately separate from sendEvent(): V there is a bare type variable at its call site, so javac
+  // can never see it as List<T> and always builds Event via the single-value Event(Type, K, T data)
+  // constructor - even when the caller actually passes a list. Declaring payloadList as List<V> here
+  // lets the compiler prove the List<T> match, so this correctly populates Event.dataList instead.
+  <K, V> Mono<Void> sendListEvent(String bindingName, Event.Type eventType, K key, List<V> payloadList) {
+    Event<K, V> event = new Event<>(eventType, key, payloadList);
+    return Mono.fromRunnable(() -> sendMessage(bindingName, event))
+      .doOnError(ex -> LOG.error("Failed to send {} event for key: {}", eventType, key, ex)).then();
+  }
+
   @Override
   public Flux<InventoryDto> getInventoryStocks() {
     return getFlux(INVENTORY_SERVICE_URL + "/inventories", InventoryDto.class);
@@ -279,7 +289,8 @@ public class OrderCompositeIntegration implements ProductService, InventoryServi
 
   @Override
   public Mono<Void> reduceStocks(List<InventoryStockAdjustmentRequestDto> inventoryReduceDtos) {
-    return sendEvent("inventories-out-0", Event.Type.REDUCE_STOCKS, null, inventoryReduceDtos);
+    return this.<Integer, InventoryStockAdjustmentRequestDto>sendListEvent(
+      "inventories-out-0", Event.Type.REDUCE_STOCKS, null, inventoryReduceDtos);
   }
 
   public Mono<Health> getInventoryHealth() {
